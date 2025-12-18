@@ -84,6 +84,19 @@ missed_shots = 0
 game_over = False
 MAX_MISS = 10
 
+# Boss Variables
+BOSS_HEALTH = 1000
+boss_x = 0
+boss_y = 0
+boss_rot = 0
+boss_active = False  # Will activate in Wave 3
+boss_health = BOSS_HEALTH
+
+# Ammo and Health Pickup Variables
+pickups = []  # Tuple of [x, y, type] "health" or "ammo"
+player_ammo = 10  # Player ammo count
+player_max_health = 5  # For testing for now
+
 
 # def handleCollisions():
 #     pass  
@@ -384,6 +397,8 @@ def moveEnemies():
         enemy_list[i] = [ex, ey, erot]
         
 
+        
+
 def initEnemies():
     global enemy_list
     
@@ -412,6 +427,28 @@ def initEnemies():
                 rot = 270
             
             enemy_list.append([x, y, rot])
+            
+# Boss Move Functions # From Enemy Ai
+def moveBoss():
+    global boss_x, boss_y, boss_rot
+    
+    if not boss_active:
+        return
+    
+    
+    boss_x, boss_y, boss_rot = enemy_ai.moveBoss(
+        boss_x, boss_y, boss_rot, 
+        player_x, player_y, 
+        ENEMY_SPEED  # regular enemy speed for testing
+    )
+    
+def initBoss():
+    global boss_x, boss_y, boss_rot, boss_active, boss_health
+    
+    # From Enemy.py
+    boss_x, boss_y, boss_rot = enemy_ai.initBoss()
+    boss_active = True
+    boss_health = BOSS_HEALTH
             
 
 def newEnemy():
@@ -446,10 +483,26 @@ def drawBullet(bx, by):
     glTranslatef(bx, by, 120 + PLAYER_HEIGHT - 40)
     glutSolidCube(15)
     glPopMatrix()
+
+# Pickup Draw Method
+def drawPickups():
+    if game_over:
+        return
+    
+    for px, py, ptype in pickups:
+        if ptype == "health":
+            models.drawHealthBox(px, py, 50)  # Health Pickup Box
+        elif ptype == "ammo":
+            models.drawAmmoBox(px + 40, py + 40, 50)    # Ammo Pickup Box
     
 
 def shoot():
-    global bullets_shot
+    global bullets_shot, player_ammo
+    
+    # Check if Player has run out of ammo
+    if player_ammo <= 0:
+        print("Out of ammo!")
+        return
     
     angle = math.radians(player_rot)
     
@@ -461,6 +514,7 @@ def shoot():
     
     bullets.append([start_x, start_y, dx, dy])
     bullets_shot += 1
+    player_ammo -= 1  # Decrement ammo
     printStats()
     
 
@@ -509,11 +563,11 @@ def hitTest(bx, by, ex, ey):
     
     return dist < (b_rad + e_rad)
     
-
+# For Enemy Collisions (Boss + Enemy)
 def handleHits():
-    global bullets, enemy_list, score
+    global bullets, enemy_list, score, boss_health, game_over, pickups, boss_active
     
-    if not bullets or not enemy_list:
+    if not bullets:
         return
     
     new_bullets = []
@@ -522,21 +576,80 @@ def handleHits():
     for bx, by, dx, dy in bullets:
         hit = False
         
-        for i in range(len(new_enemies)):
-            ex, ey, erot = new_enemies[i]
+        # Check boss hit
+        if boss_active:
+            # Boss hit test (boss has bigger hitbox: 75 radius)
+            dx_boss = bx - boss_x
+            dy_boss = by - boss_y
+            boss_dist = math.sqrt(dx_boss*dx_boss + dy_boss*dy_boss)
             
-            if hitTest(bx, by, ex, ey):
-                new_enemies[i] = newEnemy()
-                score += 1 
+            if boss_dist < (7.5 + 75):  # Bullet radius + boss radius
+                boss_health -= 1  # 1 damage per bullet for now
                 hit = True
-                printStats()
-                break
+                print(f"Boss health: {boss_health}")
+                if boss_health <= 0:
+                    boss_active = False
+                    score += 100  # Bonus score for boss
+                    printStats()
+        
+        # Check regular enemy hits
+        if not hit:
+            for i in range(len(new_enemies)):
+                ex, ey, erot = new_enemies[i]
+                
+                dx_enemy = bx - ex
+                dy_enemy = by - ey
+                enemy_dist = math.sqrt(dx_enemy*dx_enemy + dy_enemy*dy_enemy)
+                
+                if enemy_dist < (7.5 + 50):  # Bullet radius + enemy radius
+                    
+                    # Enemy dies, spawn pickup at that location
+                    pickups.append([ex, ey, "health"])  # Health pickup (for randomization)
+                    pickups.append([ex, ey, "ammo"])    # Ammo pickup (for randomization)
+                    
+                    new_enemies[i] = newEnemy()
+                    score += 1 
+                    hit = True
+                    printStats()
+                    break
         
         if not hit:
             new_bullets.append([bx, by, dx, dy])
     
     bullets = new_bullets
     enemy_list = new_enemies
+    
+# Pickup Logic
+def handlePickups():
+    global pickups, life, player_ammo
+    
+    if not pickups:
+        return
+    
+    new_pickups = []
+    
+    for i in range(len(pickups)):
+        px, py, ptype = pickups[i]
+        
+        # Check distance to player of Pickups
+        dx = px - player_x
+        dy = py - player_y
+        dist = math.sqrt(dx*dx + dy*dy)
+        
+        if dist < 100:  # Pickup collision radius (hitbox)
+            # Collect pickup
+            if ptype == "health":
+                life += 1  # Stack health
+                print(f"Health collected! Life: {life}")
+            elif ptype == "ammo":
+                player_ammo += 5  # Stack ammo
+                print(f"Ammo collected! Ammo: {player_ammo}")
+        else:
+            # Keeps pickup on screen if not collected
+            new_pickups.append([px, py, ptype])
+    
+    pickups = new_pickups
+
     
 
 # camera stuff
@@ -582,8 +695,21 @@ def cameraFPS():
         
 
 def playerHit():
-    global life, game_over, enemy_list, bullets
+    global life, game_over, enemy_list, bullets, boss_active
     
+    # Check boss collision
+    if boss_active:
+        dx = boss_x - player_x
+        dy = boss_y - player_y
+        dist = math.sqrt(dx*dx + dy*dy)
+        
+        if dist < (75 + 18):  # Boss radius + player head radius
+            life = 0  # Instant death for testing
+            game_over = True
+            bullets = []
+            return
+    
+    # Check regular enemy collisions (Same code as before)
     for i in range(len(enemy_list)):
         ex, ey, erot = enemy_list[i]
         dx = ex - player_x
@@ -609,6 +735,9 @@ def drawUI():
         draw_text(10, WINDOW_HEIGHT - 30, f"Life: {life}")
         draw_text(10, WINDOW_HEIGHT - 60, f"Score: {score}")
         draw_text(10, WINDOW_HEIGHT - 90, f"Missed: {missed_shots}/{MAX_MISS}")
+        draw_text(10, WINDOW_HEIGHT - 120, f"Ammo: {player_ammo}")  # Add ammo display
+        if boss_active:
+            draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"BOSS: {boss_health}")
     else:
         draw_text(10, WINDOW_HEIGHT - 30, f"GAME OVER! Score: {score}")
         draw_text(10, WINDOW_HEIGHT - 60, "Press R to restart")
@@ -617,7 +746,7 @@ def drawUI():
 def resetAll():
     global life, score, missed_shots, game_over
     global player_x, player_y, player_rot
-    global bullets, enemy_list
+    global bullets, enemy_list, pickups, player_ammo
     global cheat_active, cheat_vision, fps_mode
     
     life = 5
@@ -631,6 +760,8 @@ def resetAll():
     
     bullets = []
     enemy_list = []
+    pickups = []  
+    player_ammo = 10  
     
     cheat_active = False
     cheat_vision = False
@@ -805,12 +936,14 @@ def update():
         initEnemies()
     
     moveEnemies()
+    moveBoss()
     moveBullets()
     handleHits()
+    handlePickups()
     playerHit()
     pulse()
     cheat()
-    planet_attacker_list = enemy_ai.movePlanetAttackers(planet_attacker_list, 0, -1600) # For planet attacker movement
+    planet_attacker_list = enemy_ai.movePlanetAttackers(planet_attacker_list, 0, -1600)
     
     glutPostRedisplay()
     
@@ -840,7 +973,15 @@ def display():
     # drawPlayer()
     drawHealthbar()  # Add this line
     drawEnemies()
+    
+    # Draw boss if Active only
+    if boss_active:
+        models.drawBossEnemy(boss_x, boss_y, 120 + PLAYER_HEIGHT, boss_rot)
+    
+    
+    
     showBullets()
+    drawPickups()
     drawPlanetAttackers()
     
     # 

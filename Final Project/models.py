@@ -150,3 +150,88 @@ def drawPlanetAttacker(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     glPopMatrix()
     
     glPopMatrix()
+    
+    
+# Boss Enemy Parts
+def drawBossBody():
+    glColor3f(colors.BOSS_RED[0], colors.BOSS_RED[1], colors.BOSS_RED[2])  # Red body
+    glutSolidSphere(75, 30, 30)  # Bigger than hero (75 vs 50)
+
+def drawBossHand():
+    glColor3f(colors.BOSS_WHITE[0], colors.BOSS_WHITE[1], colors.BOSS_WHITE[2])  # White hands
+    gluCylinder(gluNewQuadric(), 7.5, 4.5, 90, 10, 10)  # Scaled up (90 vs 60)
+
+def drawBossCircle():
+    glColor3f(colors.BOSS_BALL_COLOR[0], colors.BOSS_BALL_COLOR[1], colors.BOSS_BALL_COLOR[2])  # Yellow balls
+    glutSolidSphere(45, 20, 20)  # Bigger balls (45 vs 30)
+
+def drawBossGun():
+    glColor3f(colors.BOSS_GUN_COLOR[0], colors.BOSS_GUN_COLOR[1], colors.BOSS_GUN_COLOR[2])  # Purple gun
+    glTranslatef(0, 0, 45)  # Adjusted for larger body
+    glRotatef(-90, 1, 0, 0) 
+    gluCylinder(gluNewQuadric(), 12, 6, 75, 10, 10)  # Scaled up gun
+    glRotatef(90, 1, 0, 0)
+
+
+# Boss Enemy (Bigger Version of the Hero Spaceship)
+def drawBossEnemy(pos_x=0, pos_y=0, pos_z=120, rotation=0):
+    glPushMatrix()
+    
+    glTranslatef(pos_x, pos_y, pos_z)
+    glRotatef(rotation, 0, 0, 1)
+    
+    drawBossBody()
+    
+    # Hand 1 (Right)
+    glPushMatrix()
+    glTranslatef(90, 0, 0)  # Scaled position
+    glRotatef(90, 0, 1, 0)
+    drawBossHand()
+    glPopMatrix()
+    
+    # Hand 2 (Left)
+    glPushMatrix()
+    glTranslatef(-90, 0, 0)  # Scaled position
+    glRotatef(-90, 0, 1, 0)  
+    drawBossHand()
+    glPopMatrix()
+    
+    # Hand Balls
+    glPushMatrix()
+    glTranslatef(180, 0, 0)  # Right hand bal
+    drawBossCircle()
+    glPopMatrix()
+    
+    glPushMatrix()
+    glTranslatef(-180, 0, 0)  # Left hand ball
+    drawBossCircle()  
+    glPopMatrix()
+    
+    # Gun
+    glPushMatrix()
+    drawBossGun()
+    glPopMatrix()
+    
+    glPopMatrix()
+    
+# Health Pickup Box
+def drawHealthBox(pos_x =0, pos_y=0, pos_z=50):
+    glPushMatrix()
+    
+    glTranslatef(pos_x, pos_y, pos_z)
+    
+    glColor3f(colors.HEALTH_BOX_COLOR[0], colors.HEALTH_BOX_COLOR[1], colors.HEALTH_BOX_COLOR[2])
+    glutSolidCube(30)  # White cube size 30
+    
+    glPopMatrix()
+
+# Ammo Pickup Box
+def drawAmmoBox(pos_x=0, pos_y=0, pos_z=50):
+    glPushMatrix()
+    
+    glTranslatef(pos_x, pos_y, pos_z)
+    
+    glColor3f(colors.AMMO_BOX_COLOR[0], colors.AMMO_BOX_COLOR[1], colors.AMMO_BOX_COLOR[2])
+    glutSolidCube(30)  # Khaki green cube size 30
+    
+    glPopMatrix()
