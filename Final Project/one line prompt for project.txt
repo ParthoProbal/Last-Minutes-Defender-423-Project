@@ -1,0 +1,437 @@
+i am going to modify and add new features in the games, here is are the rules: 
+
+****You can not use any other OpenGL function to implement the project other than what is given in this template code(3D Lab Assignment Template). Doing so will induce a zero on the project mark for every member.***
+
+here is the template :
+
+from OpenGL.GL import *
+from OpenGL.GLUT import *
+from OpenGL.GLU import *
+
+# Camera-related variables
+camera_pos = (0,500,500)
+
+fovY = 120  # Field of view
+GRID_LENGTH = 600  # Length of grid lines
+rand_var = 423
+
+
+def draw_text(x, y, text, font=GLUT_BITMAP_HELVETICA_18):
+    glColor3f(1,1,1)
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Set up an orthographic projection that matches window coordinates
+    gluOrtho2D(0, 1000, 0, 800)  # left, right, bottom, top
+
+    
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Draw text at (x, y) in screen coordinates
+    glRasterPos2f(x, y)
+    for ch in text:
+        glutBitmapCharacter(font, ord(ch))
+    
+    # Restore original projection and modelview matrices
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
+
+
+def draw_shapes():
+
+    glPushMatrix()  # Save the current matrix state
+    glColor3f(1, 0, 0)
+    glTranslatef(0, 0, 0)  
+    glutSolidCube(60) # Take cube size as the parameter
+    glTranslatef(0, 0, 100) 
+    glColor3f(0, 1, 0)
+    glutSolidCube(60) 
+
+    glColor3f(1, 1, 0)
+    glScalef(2, 2, 2)
+    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)  # parameters are: quadric, base radius, top radius, height, slices, stacks
+    glTranslatef(100, 0, 100) 
+    glRotatef(90, 0, 1, 0)  # parameters are: angle, x, y, z
+    gluCylinder(gluNewQuadric(), 40, 5, 150, 10, 10)
+
+    glColor3f(0, 1, 1)
+    glTranslatef(300, 0, 100) 
+    gluSphere(gluNewQuadric(), 80, 10, 10)  # parameters are: quadric, radius, slices, stacks
+
+    glPopMatrix()  # Restore the previous matrix state
+
+
+def keyboardListener(key, x, y):
+    """
+    Handles keyboard inputs for player movement, gun rotation, camera updates, and cheat mode toggles.
+    """
+    # # Move forward (W key)
+    # if key == b'w':  
+
+    # # Move backward (S key)
+    # if key == b's':
+
+    # # Rotate gun left (A key)
+    # if key == b'a':
+
+    # # Rotate gun right (D key)
+    # if key == b'd':
+
+    # # Toggle cheat mode (C key)
+    # if key == b'c':
+
+    # # Toggle cheat vision (V key)
+    # if key == b'v':
+
+    # # Reset the game if R key is pressed
+    # if key == b'r':
+
+
+def specialKeyListener(key, x, y):
+    """
+    Handles special key inputs (arrow keys) for adjusting the camera angle and height.
+    """
+    global camera_pos
+    x, y, z = camera_pos
+    # Move camera up (UP arrow key)
+    # if key == GLUT_KEY_UP:
+
+    # # Move camera down (DOWN arrow key)
+    # if key == GLUT_KEY_DOWN:
+
+    # moving camera left (LEFT arrow key)
+    if key == GLUT_KEY_LEFT:
+        x -= 1  # Small angle decrement for smooth movement
+
+    # moving camera right (RIGHT arrow key)
+    if key == GLUT_KEY_RIGHT:
+        x += 1  # Small angle increment for smooth movement
+
+    camera_pos = (x, y, z)
+
+
+def mouseListener(button, state, x, y):
+    """
+    Handles mouse inputs for firing bullets (left click) and toggling camera mode (right click).
+    """
+        # # Left mouse button fires a bullet
+        # if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+
+        # # Right mouse button toggles camera tracking mode
+        # if button == GLUT_RIGHT_BUTTON and state == GLUT_DOWN:
+
+
+def setupCamera():
+    """
+    Configures the camera's projection and view settings.
+    Uses a perspective projection and positions the camera to look at the target.
+    """
+    glMatrixMode(GL_PROJECTION)  # Switch to projection matrix mode
+    glLoadIdentity()  # Reset the projection matrix
+    # Set up a perspective projection (field of view, aspect ratio, near clip, far clip)
+    gluPerspective(fovY, 1.25, 0.1, 1500) # Think why aspect ration is 1.25?
+    glMatrixMode(GL_MODELVIEW)  # Switch to model-view matrix mode
+    glLoadIdentity()  # Reset the model-view matrix
+
+    # Extract camera position and look-at target
+    x, y, z = camera_pos
+    # Position the camera and set its orientation
+    gluLookAt(x, y, z,  # Camera position
+              0, 0, 0,  # Look-at target
+              0, 0, 1)  # Up vector (z-axis)
+
+
+def idle():
+    """
+    Idle function that runs continuously:
+    - Triggers screen redraw for real-time updates.
+    """
+    # Ensure the screen updates with the latest changes
+    glutPostRedisplay()
+
+
+def showScreen():
+    """
+    Display function to render the game scene:
+    - Clears the screen and sets up the camera.
+    - Draws everything of the screen
+    """
+    # Clear color and depth buffers
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()  # Reset modelview matrix
+    glViewport(0, 0, 1000, 800)  # Set viewport size
+
+    setupCamera()  # Configure camera perspective
+
+    # Draw a random points
+    glPointSize(20)
+    glBegin(GL_POINTS)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glEnd()
+
+    # Draw the grid (game floor)
+    glBegin(GL_QUADS)
+    
+    glColor3f(1, 1, 1)
+    glVertex3f(-GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+
+    glVertex3f(GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+
+
+    glColor3f(0.7, 0.5, 0.95)
+    glVertex3f(-GRID_LENGTH, -GRID_LENGTH, 0)
+    glVertex3f(-GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, -GRID_LENGTH, 0)
+
+    glVertex3f(GRID_LENGTH, GRID_LENGTH, 0)
+    glVertex3f(GRID_LENGTH, 0, 0)
+    glVertex3f(0, 0, 0)
+    glVertex3f(0, GRID_LENGTH, 0)
+    glEnd()
+
+    # Display game info text at a fixed screen position
+    draw_text(10, 770, f"A Random Fixed Position Text")
+    draw_text(10, 740, f"See how the position and variable change?: {rand_var}")
+
+    draw_shapes()
+
+    # Swap buffers for smooth rendering (double buffering)
+    glutSwapBuffers()
+
+
+# Main function to set up OpenGL window and loop
+def main():
+    glutInit()
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH)  # Double buffering, RGB color, depth test
+    glutInitWindowSize(1000, 800)  # Window size
+    glutInitWindowPosition(0, 0)  # Window position
+    wind = glutCreateWindow(b"3D OpenGL Intro")  # Create the window
+
+    glutDisplayFunc(showScreen)  # Register display function
+    glutKeyboardFunc(keyboardListener)  # Register keyboard listener
+    glutSpecialFunc(specialKeyListener)
+    glutMouseFunc(mouseListener)
+    glutIdleFunc(idle)  # Register the idle function to move the bullet automatically
+
+    glutMainLoop()  # Enter the GLUT main loop
+
+if __name__ == "__main__":
+    main()
+
+keep this to you, i will instruct you what to do, here is the template and features for our game, keep this to you: 
+
+Game Name
+Last Minute Defender 3D
+
+Game Overview
+Last Minute Defender 3D is a 3D-rendered space shooter survival game developed using PyOpenGL, where all gameplay takes place on a single 2D plane. Although the game uses fully 3D models, lighting, and a dynamic camera system, all spaceships, bullets, enemies, and the planet move on a flat surface to simplify control and combat.
+The player controls a heroic spaceship tasked with defending both itself and a planet during the final minute of an alien invasion. The game is divided into three progressive waves, with increasing difficulty and a final boss encounter that determines victory or defeat.
+
+Enemy Types & Base Mechanics
+Shooter Enemies (3)
+Actively chase the player spaceship
+Fire aimed bullets every 1 second
+Bullets can be dodged
+Bullets damage:
+Player spaceship
+Planet if they collide with it
+Planet-Hunter Enemies (2)
+Do not shoot
+Continuously move toward the planet
+Damage the planet through direct collision
+
+Wave System & Progression
+Across all waves, two planet-hunter enemies are always present. If destroyed, they respawn automatically, ensuring continuous pressure on the planet throughout the game.
+
+Wave 1 (0–20 seconds)
+Standard enemy speed and damage
+Regular combat and pickups
+
+Wave 2 (20–35 seconds)
+All existing regular enemies receive:
+2× movement speed
+2× damage (both bullets and collisions)
+No new enemies are spawned.
+
+Wave 3 – Final Wave (35–60 seconds)
+Boss Alien Spaceship
+Health: 1000
+Bullet damage: 200
+Fire rate: 1 bullet per second
+Bullet speed: slower than player bullets (allowing dodging)
+Movement speed: slower than the player
+Behavior:
+Chases the player
+Attempts to collide with the player
+Does not attack the planet
+Boss bullets cannot damage the planet.
+Boss Collision Damage
+Player takes 300 damage
+Boss takes 100 damage
+Wave 3 Rules
+No new regular shooter enemies spawn
+Two planet-hunter enemies remain active and may continue damaging the planet
+Existing regular enemies remain on screen
+Random hostile bullets continue spawning
+No health pickups appear at all in Wave 3
+No regular ammo pickups appear after the player acquires the Mega Weapon
+
+Mega Power-Ups (Wave 3 Only)
+Mega Weapon Pickup
+Spawns randomly at the start of Wave 3
+Weapon damage: 200 per bullet
+Fire delay: 2 seconds per shot
+Bullet speed: faster than boss bullets
+Weapon capacity: 10 bullets
+Replaces the normal weapon permanently
+Mega Weapon Ammo Regeneration
+When ammo drops below 3:
+1–3 ammo units spawn every 3 seconds
+Regeneration continues until capacity is restored
+
+Mega Shield Pickup
+Spawns randomly at the start of Wave 3
+Sets player health to 1000
+Replaces all previous health (no stacking)
+Shield is permanent
+If shield reaches 0, the game ends immediately
+Health pickups are disabled in Wave 3
+
+Health & Damage Systems
+Player
+Starts with:
+10 lives (hard cap before Wave 3)
+10 bullets
+Collision damage:
+Shooter enemy: −3 lives
+Planet-hunter enemy: −6 lives
+Boss collision: −300 shield/health
+Player health or shield is displayed via a health bar
+Planet
+Starts with 100 lives
+Damage rules:
+Planet-hunter collision: −3
+Shooter bullet: −1
+If the planet is destroyed at any time (including Wave 3), the game ends immediately, even if the player shield is still active
+Infinite health in Cheat Mode
+Planet health bar is displayed
+
+Combat & Shooting System
+Left Mouse Button fires one bullet per click
+No reload system
+Bullets disappear after leaving the screen or upon collision
+Bullets cannot collide with or destroy other bullets
+Enemy Destruction Rules
+1 bullet destroys 1 shooter enemy
+2 bullets destroy 1 planet-hunter enemy
+Collision always destroys enemies
+
+Pickups System (Wave 1 & 2 Only)
+Destroyed enemies may randomly drop:
+Ammo + health
+Ammo only
+Health only
+Nothing
+Pickup behavior:
+Do not disappear over time
+Can be stacked
+Are ignored if the player is already full
+
+Camera & Visual System
+Fixed 2D gameplay plane (constant Z-axis)
+Arrow Up / Down → camera distance
+Arrow Left / Right → camera rotation
+F → switch between first-person and third-person views
+Visual feedback:
+Distinct spaceship color in Cheat Mode
+Super-speed camera behavior in Cheat Mode
+Spaceship turns black on game over
+
+Cheat Mode
+Activated using C key:
+Infinite player health
+Infinite ammo
+Super movement speed
+Infinite planet health
+Distinct spaceship color
+Cheat Mode Effects:
+Final QTE does not trigger
+Boss can be destroyed normally
+
+Final Boss QTE System (Non-Cheat Mode Only)
+Triggered when boss health reaches 0 and the player survives any collision damage.
+QTE Rules
+Game enters a QTE state
+All gameplay freezes
+Game timer pauses during QTE
+Pause key (P) is disabled during QTE
+One random key is selected: W / A / S / D
+Player has 1 second to respond
+A shrinking time bar represents remaining time
+No cinematic or slow-motion effects
+QTE Outcomes
+Correct key:
+Player fires a special large bullet
+Boss is destroyed
+Boss spaceship turns black
+Game Win
+Wrong key or timeout:
+Boss fires a special large bullet
+Player spaceship is destroyed
+Game Over
+
+HUD & UI
+Player health or shield bar
+Planet health bar
+Large boss health bar displayed at the bottom of the screen during Wave 3
+Countdown timer
+QTE key prompt and time bar
+
+Controls
+W / A / S / D → Movement & rotation
+Left Mouse Button → Shoot
+F → Camera view switch
+C → Cheat Mode
+P → Pause / Resume
+ESC → Exit game
+
+Win & Loss Conditions
+Win Condition
+Player must defeat the boss during Wave 3 before the 1-minute timer ends
+Loss Conditions
+Timer reaches zero before boss is defeated
+Player health or shield reaches zero
+Planet health reaches zero
+QTE failure
+
+Work Distribution
+Member 1 – Graphics & Camera
+3D models and environment
+Camera system
+HUD and health bars
+Boss health bar and QTE UI
+Member 2 – Game Logic & Enemies
+Enemy AI and wave logic
+Damage calculations
+Boss behavior
+Cheat Mode
+QTE state handling
+Member 3 – Player & Gameplay
+Player movement and shooting
+Pickups and ammo regeneration
+Timer and win/loss logic
+QTE input detection
+
+keep this to you, will make this game all by myself, i am the one man army, just keep everything to you, don't write code yet
