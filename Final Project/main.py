@@ -5,6 +5,8 @@ import math
 import random
 import models
 import enemy_ai
+import collision
+import healthBar
 
 
 WINDOW_WIDTH = 1250
@@ -75,6 +77,10 @@ cheat_vision = False
 # firing stuff
 last_fired = {}
 FIRE_DELAY = 0.1
+
+# Planet Stuff
+planet_health = 100
+planet_max_health = 100
 
 # game state
 bullets_shot = 0
@@ -230,37 +236,6 @@ def weapon():
     gluCylinder(gluNewQuadric(), 10, 5, 80, 10, 10)
     glRotatef(90, 1, 0, 0)
     
-def drawHealthbar():
-    if game_over:
-        return
-    
-    glPushMatrix()
-    
-    # Position above player's head
-    glTranslatef(player_x, player_y, 120 + PLAYER_HEIGHT + 50)
-    
-    # Healthbar background (gray)
-    glColor3f(0.3, 0.3, 0.3)
-    glBegin(GL_QUADS)
-    glVertex3f(-30, -5, 0)
-    glVertex3f(30, -5, 0)
-    glVertex3f(30, 5, 0)
-    glVertex3f(-30, 5, 0)
-    glEnd()
-    
-    # Healthbar fill (orange)
-    glColor3f(HEALTH_ORANGE[0], HEALTH_ORANGE[1], HEALTH_ORANGE[2])
-    health_width = 60 * (life / 5.0)  # Scale based on remaining life
-    
-    glBegin(GL_QUADS)
-    glVertex3f(30 - health_width, -4, 1)  # Changed from -30
-    glVertex3f(30, -4, 1)                 # Changed from -30 + health_width
-    glVertex3f(30, 4, 1)                  # Changed from -30 + health_width
-    glVertex3f(30 - health_width, 4, 1)
-    glEnd()
-    
-    glPopMatrix()
-    
 
 def drawPlayer():
     if game_over:
@@ -340,14 +315,22 @@ def drawEnemies():
     
     for ex, ey, erot in enemy_list:
         models.drawHeroAttacker(ex, ey, 120 + PLAYER_HEIGHT, erot)
+        # Health Bar for every enemy
+        healthBar.drawEnemyHealthbar(ex, ey, 120 + PLAYER_HEIGHT)
 
 # Draw Func for player attacking     
 def drawPlanetAttackers():
     if game_over:
         return
     
-    for ex, ey, erot in planet_attacker_list:
+    for planet_attacker in planet_attacker_list:
+        if len(planet_attacker) == 3:
+            ex, ey, erot = planet_attacker
+        else:
+            ex, ey, erot, charging_state, charge_timer = planet_attacker
+        
         models.drawPlanetAttacker(ex, ey, 120 + PLAYER_HEIGHT, erot)
+        healthBar.drawPlanetAttackerHealthbar(ex, ey, 120 + PLAYER_HEIGHT)
         
 
 def pulse():
@@ -553,103 +536,6 @@ def showBullets():
     
     for bx, by, dx, dy in bullets:
         drawBullet(bx, by)
-        
-
-def hitTest(bx, by, ex, ey):
-    b_rad = 7.5
-    e_rad = 50
-    
-    dist = math.sqrt((bx - ex) ** 2 + (by - ey) ** 2)
-    
-    return dist < (b_rad + e_rad)
-    
-# For Enemy Collisions (Boss + Enemy)
-def handleHits():
-    global bullets, enemy_list, score, boss_health, game_over, pickups, boss_active
-    
-    if not bullets:
-        return
-    
-    new_bullets = []
-    new_enemies = enemy_list.copy()
-    
-    for bx, by, dx, dy in bullets:
-        hit = False
-        
-        # Check boss hit
-        if boss_active:
-            # Boss hit test (boss has bigger hitbox: 75 radius)
-            dx_boss = bx - boss_x
-            dy_boss = by - boss_y
-            boss_dist = math.sqrt(dx_boss*dx_boss + dy_boss*dy_boss)
-            
-            if boss_dist < (7.5 + 75):  # Bullet radius + boss radius
-                boss_health -= 1  # 1 damage per bullet for now
-                hit = True
-                print(f"Boss health: {boss_health}")
-                if boss_health <= 0:
-                    boss_active = False
-                    score += 100  # Bonus score for boss
-                    printStats()
-        
-        # Check regular enemy hits
-        if not hit:
-            for i in range(len(new_enemies)):
-                ex, ey, erot = new_enemies[i]
-                
-                dx_enemy = bx - ex
-                dy_enemy = by - ey
-                enemy_dist = math.sqrt(dx_enemy*dx_enemy + dy_enemy*dy_enemy)
-                
-                if enemy_dist < (7.5 + 50):  # Bullet radius + enemy radius
-                    
-                    # Enemy dies, spawn pickup at that location
-                    pickups.append([ex, ey, "health"])  # Health pickup (for randomization)
-                    pickups.append([ex, ey, "ammo"])    # Ammo pickup (for randomization)
-                    
-                    new_enemies[i] = newEnemy()
-                    score += 1 
-                    hit = True
-                    printStats()
-                    break
-        
-        if not hit:
-            new_bullets.append([bx, by, dx, dy])
-    
-    bullets = new_bullets
-    enemy_list = new_enemies
-    
-# Pickup Logic
-def handlePickups():
-    global pickups, life, player_ammo
-    
-    if not pickups:
-        return
-    
-    new_pickups = []
-    
-    for i in range(len(pickups)):
-        px, py, ptype = pickups[i]
-        
-        # Check distance to player of Pickups
-        dx = px - player_x
-        dy = py - player_y
-        dist = math.sqrt(dx*dx + dy*dy)
-        
-        if dist < 100:  # Pickup collision radius (hitbox)
-            # Collect pickup
-            if ptype == "health":
-                life += 1  # Stack health
-                print(f"Health collected! Life: {life}")
-            elif ptype == "ammo":
-                player_ammo += 5  # Stack ammo
-                print(f"Ammo collected! Ammo: {player_ammo}")
-        else:
-            # Keeps pickup on screen if not collected
-            new_pickups.append([px, py, ptype])
-    
-    pickups = new_pickups
-
     
 
 # camera stuff
@@ -692,55 +578,24 @@ def cameraFPS():
         ly = player_y + 200 * math.cos(angle)
         
         gluLookAt(cx, cy, cz, lx, ly, 0, 0, 0, 1)
-        
 
-def playerHit():
-    global life, game_over, enemy_list, bullets, boss_active
-    
-    # Check boss collision
-    if boss_active:
-        dx = boss_x - player_x
-        dy = boss_y - player_y
-        dist = math.sqrt(dx*dx + dy*dy)
-        
-        if dist < (75 + 18):  # Boss radius + player head radius
-            life = 0  # Instant death for testing
-            game_over = True
-            bullets = []
-            return
-    
-    # Check regular enemy collisions (Same code as before)
-    for i in range(len(enemy_list)):
-        ex, ey, erot = enemy_list[i]
-        dx = ex - player_x
-        dy = ey - player_y
-        dist = math.sqrt(dx*dx + dy*dy)
-        
-        if dist < 50: 
-            life -= 1
-            enemy_list[i] = newEnemy()
-            printStats()
-            
-            if life <= 0:
-                game_over = True
-                life = 0
-                bullets = []
-            break
-        
 
 def drawUI():
-    global life, score, missed_shots, game_over
+    global life, score, missed_shots, game_over, planet_health
     
     if not game_over:
         draw_text(10, WINDOW_HEIGHT - 30, f"Life: {life}")
         draw_text(10, WINDOW_HEIGHT - 60, f"Score: {score}")
         draw_text(10, WINDOW_HEIGHT - 90, f"Missed: {missed_shots}/{MAX_MISS}")
-        draw_text(10, WINDOW_HEIGHT - 120, f"Ammo: {player_ammo}")  # Add ammo display
+        draw_text(10, WINDOW_HEIGHT - 120, f"Ammo: {player_ammo}")
+        draw_text(10, WINDOW_HEIGHT - 150, f"Planet Health: {planet_health}/100")
         if boss_active:
             draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"BOSS: {boss_health}")
     else:
         draw_text(10, WINDOW_HEIGHT - 30, f"GAME OVER! Score: {score}")
-        draw_text(10, WINDOW_HEIGHT - 60, "Press R to restart")
+        if planet_health <= 0:
+            draw_text(10, WINDOW_HEIGHT - 60, "Planet Destroyed!")
+        draw_text(10, WINDOW_HEIGHT - 90, "Press R to restart")
         
 
 def resetAll():
@@ -748,6 +603,7 @@ def resetAll():
     global player_x, player_y, player_rot
     global bullets, enemy_list, pickups, player_ammo
     global cheat_active, cheat_vision, fps_mode
+    global planet_attacker_list, planet_health
     
     life = 5
     score = 0
@@ -760,8 +616,10 @@ def resetAll():
     
     bullets = []
     enemy_list = []
+    planet_attacker_list = enemy_ai.initPlanetAttackers(PLANET_ATTACKER_COUNT)
     pickups = []  
-    player_ammo = 10  
+    player_ammo = 10
+    planet_health = 100
     
     cheat_active = False
     cheat_vision = False
@@ -926,7 +784,7 @@ def camSetup():
         
 
 def update():
-    global planet_attacker_list
+    global planet_attacker_list, bullets, enemy_list, score, boss_health, boss_active, pickups, game_over, life, player_ammo, planet_health
     
     if game_over:
         glutPostRedisplay()
@@ -938,9 +796,33 @@ def update():
     moveEnemies()
     moveBoss()
     moveBullets()
-    handleHits()
-    handlePickups()
-    playerHit()
+    
+    old_health = planet_health
+    
+    # Planet Health Checker
+    if planet_health <= 0:
+        game_over = True
+        planet_health = 0
+        glutPostRedisplay()
+        return
+    
+    # Imported from collision.py
+    bullets, enemy_list, planet_attacker_list, boss_health, boss_active, pickups, score, game_over = collision.handleHits(
+        bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_health, boss_active, pickups, score, game_over
+    )
+    
+    pickups, life, player_ammo = collision.handlePickups(pickups, player_x, player_y, life, player_ammo)
+    
+    
+    planet_attacker_list, planet_health = collision.planetHit(planet_attacker_list, planet_health, game_over)
+    
+    if planet_health != old_health:
+        print(f"Planet health changed: {old_health} -> {planet_health}")  
+    
+    enemy_list, planet_attacker_list, life, game_over, bullets = collision.playerHit(
+        enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, life, game_over, bullets
+    )
+    
     pulse()
     cheat()
     planet_attacker_list = enemy_ai.movePlanetAttackers(planet_attacker_list, 0, -1600)
@@ -964,30 +846,25 @@ def display():
     drawCheckerboard()
     drawWalls()
     
-    # From models.py
+    # imported from models.py
     models.drawPlanet(1000, 0, -1600, 150) # Planet pos (Radius, x, y, z)
     models.drawHeroUfo(player_x, player_y, 120 + PLAYER_HEIGHT, player_rot)
-
-    # models.drawHeroAttacker(-100, 100, 120 + PLAYER_HEIGHT, 45)
     
-    # drawPlayer()
-    drawHealthbar()  # Add this line
+    # Health bars import from healthBar.py
+    healthBar.drawHealthbar(player_x, player_y, PLAYER_HEIGHT, life, game_over, HEALTH_ORANGE)
+    if not game_over or planet_health <= 0:
+        healthBar.drawPlanetHealthBar(planet_health, planet_max_health, HEALTH_ORANGE)
+    
     drawEnemies()
     
     # Draw boss if Active only
     if boss_active:
         models.drawBossEnemy(boss_x, boss_y, 120 + PLAYER_HEIGHT, boss_rot)
     
-    
-    
     showBullets()
     drawPickups()
     drawPlanetAttackers()
-    
-    # 
 
-    # draw_text(10, WINDOW_HEIGHT - 30, f"Random text")
-    # draw_text(10, WINDOW_HEIGHT - 60, f"Variable: {rand_var}")
     
     drawUI()
 

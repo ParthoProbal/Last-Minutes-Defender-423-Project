@@ -154,22 +154,22 @@ def drawPlanetAttacker(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     
 # Boss Enemy Parts
 def drawBossBody():
-    glColor3f(colors.BOSS_RED[0], colors.BOSS_RED[1], colors.BOSS_RED[2])  # Red body
-    glutSolidSphere(75, 30, 30)  # Bigger than hero (75 vs 50)
+    glColor3f(colors.BOSS_RED[0], colors.BOSS_RED[1], colors.BOSS_RED[2])  
+    glutSolidSphere(75, 30, 30)  # Larger than hero (75 size)
 
 def drawBossHand():
-    glColor3f(colors.BOSS_WHITE[0], colors.BOSS_WHITE[1], colors.BOSS_WHITE[2])  # White hands
-    gluCylinder(gluNewQuadric(), 7.5, 4.5, 90, 10, 10)  # Scaled up (90 vs 60)
+    glColor3f(colors.BOSS_WHITE[0], colors.BOSS_WHITE[1], colors.BOSS_WHITE[2])  
+    gluCylinder(gluNewQuadric(), 7.5, 4.5, 90, 10, 10)  # Bigger
 
 def drawBossCircle():
-    glColor3f(colors.BOSS_BALL_COLOR[0], colors.BOSS_BALL_COLOR[1], colors.BOSS_BALL_COLOR[2])  # Yellow balls
-    glutSolidSphere(45, 20, 20)  # Bigger balls (45 vs 30)
+    glColor3f(colors.BOSS_BALL_COLOR[0], colors.BOSS_BALL_COLOR[1], colors.BOSS_BALL_COLOR[2])  
+    glutSolidSphere(45, 20, 20)  # Bigger Hamd ball 
 
 def drawBossGun():
-    glColor3f(colors.BOSS_GUN_COLOR[0], colors.BOSS_GUN_COLOR[1], colors.BOSS_GUN_COLOR[2])  # Purple gun
-    glTranslatef(0, 0, 45)  # Adjusted for larger body
+    glColor3f(colors.BOSS_GUN_COLOR[0], colors.BOSS_GUN_COLOR[1], colors.BOSS_GUN_COLOR[2]) 
+    glTranslatef(0, 0, 45)  
     glRotatef(-90, 1, 0, 0) 
-    gluCylinder(gluNewQuadric(), 12, 6, 75, 10, 10)  # Scaled up gun
+    gluCylinder(gluNewQuadric(), 12, 6, 75, 10, 10) 
     glRotatef(90, 1, 0, 0)
 
 
@@ -184,14 +184,14 @@ def drawBossEnemy(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     
     # Hand 1 (Right)
     glPushMatrix()
-    glTranslatef(90, 0, 0)  # Scaled position
+    glTranslatef(90, 0, 0)  
     glRotatef(90, 0, 1, 0)
     drawBossHand()
     glPopMatrix()
     
     # Hand 2 (Left)
     glPushMatrix()
-    glTranslatef(-90, 0, 0)  # Scaled position
+    glTranslatef(-90, 0, 0)  # Scaled up
     glRotatef(-90, 0, 1, 0)  
     drawBossHand()
     glPopMatrix()
@@ -221,7 +221,7 @@ def drawHealthBox(pos_x =0, pos_y=0, pos_z=50):
     glTranslatef(pos_x, pos_y, pos_z)
     
     glColor3f(colors.HEALTH_BOX_COLOR[0], colors.HEALTH_BOX_COLOR[1], colors.HEALTH_BOX_COLOR[2])
-    glutSolidCube(30)  # White cube size 30
+    glutSolidCube(30)  # White cube = 30 size
     
     glPopMatrix()
 
@@ -232,6 +232,6 @@ def drawAmmoBox(pos_x=0, pos_y=0, pos_z=50):
     glTranslatef(pos_x, pos_y, pos_z)
     
     glColor3f(colors.AMMO_BOX_COLOR[0], colors.AMMO_BOX_COLOR[1], colors.AMMO_BOX_COLOR[2])
-    glutSolidCube(30)  # Khaki green cube size 30
+    glutSolidCube(30)  # Khaki green = size 30
     
     glPopMatrix()
