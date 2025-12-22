@@ -7,6 +7,7 @@ import models
 import enemy_ai
 import collision
 import healthBar
+import timer
 
 
 WINDOW_WIDTH = 1250
@@ -589,6 +590,14 @@ def drawUI():
         draw_text(10, WINDOW_HEIGHT - 90, f"Missed: {missed_shots}/{MAX_MISS}")
         draw_text(10, WINDOW_HEIGHT - 120, f"Ammo: {player_ammo}")
         draw_text(10, WINDOW_HEIGHT - 150, f"Planet Health: {planet_health}/100")
+        
+        
+        # Time ui in game
+        time_left = timer.get_time_remaining()
+        minutes = time_left // 60
+        seconds = time_left % 60
+        draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"Time: {minutes:02d}:{seconds:02d}")
+    
         if boss_active:
             draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"BOSS: {boss_health}")
     else:
@@ -604,6 +613,9 @@ def resetAll():
     global bullets, enemy_list, pickups, player_ammo
     global cheat_active, cheat_vision, fps_mode
     global planet_attacker_list, planet_health
+    
+    timer.stop_timer()
+    timer.start_timer()
     
     life = 5
     score = 0
@@ -790,6 +802,27 @@ def update():
         glutPostRedisplay()
         return
     
+    # # Timer updation
+    timer.update_timer()
+    
+    if timer.get_time_remaining() <= 0 and timer.is_timer_active():
+        game_over = True
+        timer.stop_timer()
+        print("TIME'S UP! Game Over!")
+        glutPostRedisplay()
+        return
+    
+    current_time = timer.get_time_remaining()
+    if current_time % 5 == 0:  # Print every 5 seconds
+        print(f"Timer: {current_time} seconds remaining")
+    
+    if (timer.get_time_remaining() <= 0 and timer.is_timer_active()):
+        game_over = True
+        timer.stop_timer()
+        print("Time up, game over") # Debug code
+        glutPostRedisplay()
+        return
+    
     if not enemy_list:
         initEnemies()
     
@@ -864,6 +897,9 @@ def display():
     showBullets()
     drawPickups()
     drawPlanetAttackers()
+    
+    # From timer
+    timer.draw_timer()
 
     
     drawUI()
@@ -878,6 +914,8 @@ def main():
     glutInitWindowPosition(0, 0)
     glutCreateWindow(b"Bullet Frenzy")
     
+    timer.start_timer()
+    
     glutDisplayFunc(display)
     glutKeyboardFunc(keyHandler)
     glutSpecialFunc(arrowKeys)
@@ -885,6 +923,7 @@ def main():
     glutIdleFunc(update)
 
     glutMainLoop()
+
 
 if __name__ == "__main__":
     main()
