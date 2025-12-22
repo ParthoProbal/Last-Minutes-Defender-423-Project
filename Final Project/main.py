@@ -8,8 +8,11 @@ import enemy_ai
 import collision
 import healthBar
 import timer
-#sss#
-import WaveSystem
+
+#sss update#
+import wave_system
+import mega_powerups
+import cheat_mode
 
 WINDOW_WIDTH = 1250
 WINDOW_HEIGHT = 1000
@@ -856,6 +859,51 @@ def update():
     enemy_list, planet_attacker_list, life, game_over, bullets = collision.playerHit(
         enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, life, game_over, bullets
     )
+###SSS Update###    
+    # 1. Run wave system (once per update)
+    wave_status = wave_system.run_wave_system(
+        enemy_list, ENEMY_SPEED, GRID_LEN, planet_attacker_list,
+        initEnemies, initBoss, boss_active, boss_x, boss_y,
+        boss_rot, boss_health, BOSS_HEALTH, player_x, player_y
+    )
+    
+    # 2. Run mega power-ups system (once per update)
+    mega_status = mega_powerups.run_mega_powerups_system(
+        player_x, player_y, wave_status, life, 
+        player_max_health, player_ammo, time.time()
+    )
+    
+    # 3. Run cheat mode system (once per update)
+    player_stats = {
+        'health': life,
+        'max_health': player_max_health,
+        'ammo': player_ammo,
+        'speed': PLAYER_SPEED,
+        'fire_delay': FIRE_DELAY
+    }
+    
+    enemy_stats = {
+        'speed': ENEMY_SPEED,
+        'damage': 1,
+        'health': 1,
+        'boss_speed': ENEMY_SPEED * 0.7,
+        'boss_damage': 200
+    }
+    
+    cheat_result = cheat_mode.run_cheat_mode(
+        player_stats, planet_health, enemy_stats,
+        camera_pos, player_x, player_y, player_rot, last_key_pressed
+    )
+    
+    # Apply results back to your variables
+    if cheat_result['cheat_active']:
+        life = cheat_result['player_stats']['health']
+        player_ammo = cheat_result['player_stats']['ammo']
+        PLAYER_SPEED = cheat_result['player_stats']['speed']
+        planet_health = cheat_result['planet_health']
+        camera_pos = cheat_result['camera_pos']
+    
+    # ... rest of your update code ...
     
     pulse()
     cheat()
@@ -929,3 +977,4 @@ def main():
 if __name__ == "__main__":
 
     main()
+
