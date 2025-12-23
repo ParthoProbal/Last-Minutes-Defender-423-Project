@@ -14,6 +14,7 @@ import timer
 import wave_system
 import mega_powerups
 import cheat_mode
+import Spaceback
 
 WINDOW_WIDTH = 1250
 WINDOW_HEIGHT = 1000
@@ -869,6 +870,7 @@ def update():
     wave_system.draw_wave()  
     mega_powerups.draw_mega()  
     cheat_mode.draw_cheat() 
+    Spaceback.update_space()
     
     pulse()
     cheat()
@@ -883,6 +885,7 @@ def display():
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
 
     camSetup()
+    Spaceback.draw_space()
 
     # test point
     glPointSize(20)
@@ -927,6 +930,7 @@ def main():
     glutInitWindowSize(WINDOW_WIDTH, WINDOW_HEIGHT)
     glutInitWindowPosition(0, 0)
     glutCreateWindow(b"Bullet Frenzy")
+    Spaceback.init_space()
     
     timer.start_timer()
     
