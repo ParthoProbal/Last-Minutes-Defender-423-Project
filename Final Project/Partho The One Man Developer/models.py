@@ -38,11 +38,19 @@ def drawUfoGun():
     
 # Body parts end
 
-def drawHeroUfo(pos_x=0, pos_y=0, pos_z=120, rotation=0):
+def drawHeroUfo(pos_x=0, pos_y=0, pos_z=120, rotation=0, cheat_mode = False):
     glPushMatrix()
     
     glTranslatef(pos_x, pos_y, pos_z)
     glRotatef(rotation, 0, 0, 1)
+    
+    # Cheat mode color to regular mode
+    if cheat_mode:
+            glColor3f(0, 1, 0)  # Green in cheat mode
+    else:
+        glColor3f(colors.UFO_BLACK[0], colors.UFO_BLACK[1], colors.UFO_BLACK[2])
+    
+    glutSolidSphere(50, 30, 30) 
     
     drawUfoBody()
     

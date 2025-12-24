@@ -9,7 +9,7 @@ def hitTest(bx, by, ex, ey):
     
     return dist < (b_rad + e_rad)
 
-def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_health, boss_active, pickups, score, game_over):
+def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_health, boss_active, pickups, score, game_over, current_wave=1, player_has_mega_weapon=False):
     if not bullets:
         return bullets, enemy_list, planet_attacker_list, boss_health, boss_active, pickups, score, game_over
     
@@ -27,7 +27,7 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
         hit = False
         
         # Mega bullet damage
-        damage = 200 if bullet_type == "mega" else 1
+        damage = 10 if bullet_type == "mega" else 1
         
         # Check boss hit
         if boss_active:
@@ -39,8 +39,7 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
                 boss_health -= damage
                 hit = True
                 if boss_health <= 0:
-                    boss_active = False
-                    score += 100
+                    boss_health = 0
         
         # Check regular enemy hits
         if not hit:
@@ -52,8 +51,13 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
                 enemy_dist = math.sqrt(dx_enemy*dx_enemy + dy_enemy*dy_enemy)
                 
                 if enemy_dist < (7.5 + 50):
-                    pickups.append([ex, ey, "health"])
-                    pickups.append([ex, ey, "ammo"])
+                    # Wave 3: No health pickups
+                    # After mega weapon: No regular ammo pickups
+                    if current_wave != 3:  # Waves 1 & 2
+                        pickups.append([ex, ey, "health"])
+                    
+                    if not player_has_mega_weapon:  # No ammo if has mega weapon
+                        pickups.append([ex, ey, "ammo"])
                     
                     from main import newEnemy
                     new_enemies[i] = newEnemy()
@@ -75,8 +79,13 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
                 enemy_dist = math.sqrt(dx_enemy*dx_enemy + dy_enemy*dy_enemy)
                 
                 if enemy_dist < (7.5 + 35):
-                    pickups.append([ex, ey, "health"])
-                    pickups.append([ex, ey, "ammo"])
+                    # Wave 3: No health pickups
+                    # After mega weapon: No regular ammo pickups
+                    if current_wave != 3:  # Waves 1 & 2
+                        pickups.append([ex, ey, "health"])
+                    
+                    if not player_has_mega_weapon:  # No ammo if has mega weapon
+                        pickups.append([ex, ey, "ammo"])
                     
                     from enemy_ai import initPlanetAttackers
                     new_planet_attackers[i] = initSinglePlanetAttacker()
@@ -94,6 +103,7 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
     enemy_list = new_enemies
     planet_attacker_list = new_planet_attackers
     return bullets, enemy_list, planet_attacker_list, boss_health, boss_active, pickups, score, game_over
+
 
 def handlePickups(pickups, player_x, player_y, life, player_ammo):
     if not pickups:
@@ -132,9 +142,11 @@ def playerHit(enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, pla
                 damage = 300  # Boss collision damage
                 return enemy_list, planet_attacker_list, life, game_over, bullets, damage
             else:
-                life = 0
-                game_over = True
-                bullets = []
+                life -= 300  # Boss collision damage = 300
+                if life <= 0:
+                    game_over = True
+                    life = 0
+                    bullets = []
                 return enemy_list, planet_attacker_list, life, game_over, bullets, 0
     
     # Check regular enemy collisions
@@ -238,3 +250,28 @@ def planetHit(planet_attacker_list, planet_health, game_over):
             planet_attacker_list[i] = initSinglePlanetAttacker()
     
     return planet_attacker_list, planet_health
+
+def enemyBulletPlanetHit(enemy_bullets, planet_health):
+    if not enemy_bullets:
+        return planet_health
+    
+    planet_x = 0
+    planet_y = -1600
+    planet_radius = 1000
+    
+    for bullet_data in enemy_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            continue
+        
+        # Calculate distance to planet
+        dx_planet = bx - planet_x
+        dy_planet = by - planet_y
+        dist = math.sqrt(dx_planet*dx_planet + dy_planet*dy_planet)
+        
+        # Enemy bullet hits planet
+        if dist < planet_radius + 10:
+            planet_health -= 1  # Enemy bullet damage to planet
+    
+    return planet_health

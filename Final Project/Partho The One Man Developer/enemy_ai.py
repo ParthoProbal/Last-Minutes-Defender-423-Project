@@ -1,6 +1,12 @@
 import random
 import math
 
+# Enemy shooting Globals
+enemy_bullets = []
+boss_bullets = []
+ENEMY_FIRE_RATE = 1.0  # 1 bullet per second
+BOSS_FIRE_RATE = 1.0
+
 def initPlanetAttackers(count=2):
     planet_attackers = []
     
@@ -161,3 +167,113 @@ def initSinglePlanetAttacker():
     rot = 180  # Facing downward toward planet
     
     return [x, y, rot]
+
+# QTE Helper Method
+def checkBossQTE(boss_health):
+    if boss_health <= 0:
+        return True
+    return False
+
+# Boss and Enemy Shooting Mechanics
+def enemyShoot(enemy_x, enemy_y, enemy_rot, player_x, player_y, last_shot_time, current_time):
+    if current_time - last_shot_time < ENEMY_FIRE_RATE:
+        return enemy_bullets, last_shot_time
+    
+    # Calculate direction to player
+    dx = player_x - enemy_x
+    dy = player_y - enemy_y
+    dist = math.sqrt(dx*dx + dy*dy)
+    
+    if dist > 0:
+        dx /= dist
+        dy /= dist
+    
+    # Start position
+    start_x = enemy_x
+    start_y = enemy_y
+    
+    enemy_bullets.append([start_x, start_y, dx, dy, "enemy"])
+    last_shot_time = current_time
+    
+    return enemy_bullets, last_shot_time
+
+def bossShoot(boss_x, boss_y, boss_rot, player_x, player_y, last_boss_shot, current_time):
+    if current_time - last_boss_shot < BOSS_FIRE_RATE:
+        return boss_bullets, last_boss_shot
+    
+    # Calculate direction to player
+    dx = player_x - boss_x
+    dy = player_y - boss_y
+    dist = math.sqrt(dx*dx + dy*dy)
+    
+    if dist > 0:
+        dx /= dist
+        dy /= dist
+    
+    # Slower bullet speed for boss
+    start_x = boss_x
+    start_y = boss_y
+    
+    boss_bullets.append([start_x, start_y, dx * 0.5, dy * 0.5, "boss"])
+    last_boss_shot = current_time
+    
+    return boss_bullets, last_boss_shot
+
+def moveEnemyBullets():
+    global enemy_bullets
+    
+    new_bullets = []
+    
+    for bullet_data in enemy_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            bx, by, dx, dy = bullet_data
+            bullet_type = "enemy"
+        
+        bx += dx * 15  # Enemy bullet speed
+        by += dy * 15
+        
+        # Remove if out of bounds
+        limit = 800
+        if -limit <= bx <= limit and -limit <= by <= limit:
+            new_bullets.append([bx, by, dx, dy, bullet_type])
+    
+    enemy_bullets = new_bullets
+    return enemy_bullets
+
+def moveBossBullets():
+    global boss_bullets
+    
+    new_bullets = []
+    
+    for bullet_data in boss_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            bx, by, dx, dy = bullet_data
+            bullet_type = "boss"
+        
+        bx += dx * 10  # Boss bullet speed (slower)
+        by += dy * 10
+        
+        limit = 800
+        if -limit <= bx <= limit and -limit <= by <= limit:
+            new_bullets.append([bx, by, dx, dy, bullet_type])
+    
+    boss_bullets = new_bullets
+    return boss_bullets
+
+def getEnemyBullets():
+    return enemy_bullets
+
+def getBossBullets():
+    return boss_bullets
+
+def resetEnemyShooting():
+    global enemy_bullets, boss_bullets, last_enemy_shot, last_boss_shot
+    
+    enemy_bullets = []
+    boss_bullets = []
+    last_enemy_shot = 0
+    last_boss_shot = 0

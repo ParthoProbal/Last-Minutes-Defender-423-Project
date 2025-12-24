@@ -10,6 +10,7 @@ import healthBar
 import timer
 import waveSystem
 import megaPowerUps
+import QTE
 
 
 WINDOW_WIDTH = 1250
@@ -76,6 +77,7 @@ fps_mode = False
 cheat_active = False
 CHEAT_TURN = 5
 cheat_vision = False
+CHEAT_SPEED_MULTIPLIER = 3
 
 # firing stuff
 last_fired = {}
@@ -120,6 +122,20 @@ current_wave = 1
 player_has_mega_weapon = False
 player_has_mega_shield = False
 mega_shield_health = 0
+
+# QTE Variables
+qte_active = False
+qte_triggered = False
+
+# Enemy shooting vars
+ENEMY_BULLET_SPEED = 15
+BOSS_BULLET_SPEED = 10
+last_enemy_shot_time = 0
+last_boss_shot_time = 0
+enemy_last_shot_times = []
+last_boss_shot_time = 0
+
+
 
 
 # def handleCollisions():
@@ -402,11 +418,13 @@ def moveEnemies():
         
 
 def initEnemies():
-    global enemy_list
+    global enemy_list, enemy_last_shot_times
     
     if not enemy_list:
         half = GRID_LEN
         limit = GRID_LEN - 30
+        
+        enemy_last_shot_times = []  # Reset shot times
         
         for _ in range(ENEMY_COUNT):
             side = random.choice([0, 1, 2, 3])
@@ -429,6 +447,7 @@ def initEnemies():
                 rot = 270
             
             enemy_list.append([x, y, rot])
+            enemy_last_shot_times.append(0)
             
 # Boss Move Functions # From Enemy Ai
 def moveBoss():
@@ -744,69 +763,52 @@ def resetAll():
     boss_active = False
     boss_health = BOSS_HEALTH
     
+    # Reset QTE
+    QTE.resetQTE()
+    qte_active = False
+    qte_triggered = False
+    
+    # Reset Enemy and Boss Bullets
+    # Reset enemy shooting
+    enemy_ai.resetEnemyShooting()
+    enemy_last_shot_times = []
+    last_boss_shot_time = 0
+    
     printStats()
     
 
 def cheat():
-    global player_rot, cheat_active, cheat_vision, last_fired
+    global cheat_active, life, player_ammo, planet_health, mega_shield_health
     
     if not cheat_active:
         return
     
-    now = glutGet(GLUT_ELAPSED_TIME) / 1000.0
+    # Infinite health (for mega shield too)
+    if player_has_mega_shield:
+        mega_shield_health = 9999
+    else:
+        life = 9999
     
-    player_rot += CHEAT_TURN
+    # Infinite ammo
+    if not player_has_mega_weapon:
+        player_ammo = 99999
+    else:
+        megaPowerUps.mega_weapon_ammo = 10
     
-    if cheat_vision and fps_mode and enemy_list:
-        closest = enemy_list[0]
-        ex, ey, erot = closest
-        
-        angle_to = math.degrees(math.atan2(ey - player_y, ex - player_x))
-        want_angle = angle_to - 90
-        
-        diff = want_angle - player_rot
-        
-        if diff > 180:
-            diff -= 360
-        elif diff < -180:
-            diff += 360
-        
-        if abs(diff) > 30:
-            player_rot += CHEAT_TURN * 0.7
-        else:
-            player_rot += diff * 0.12
-    
-    for idx, (ex, ey, erot) in enumerate(enemy_list):
-        dx = ex - player_x
-        dy = ey - player_y
-        dist = math.sqrt(dx*dx + dy*dy)
-        
-        if dist > 400:
-            continue
-        
-        e_angle = math.degrees(math.atan2(dy, dx))
-        gun_angle = (player_rot + 90) % 360
-        e_norm = e_angle % 360
-        
-        angle_diff = abs(gun_angle - e_norm)
-        if angle_diff > 180:
-            angle_diff = 360 - angle_diff
-        
-        if angle_diff < 12:
-            if idx not in last_fired:
-                shoot()
-                last_fired[idx] = now
-                break
-            elif (now - last_fired[idx]) > FIRE_DELAY:
-                shoot()
-                last_fired[idx] = now
-                break
+    # Infinite planet health
+    planet_health = 99999
     
 
 def keyHandler(key, x, y):
     global player_x, player_y, player_rot
     global cheat_active, cheat_vision, cam_fixed, look_fixed
-    global game_over
+    global game_over, qte_active
+    
+    # QTE key handling
+    if qte_active and QTE.isQTEActive():
+        if key.lower() in [b'w', b'a', b's', b'd']:
+            QTE.handleQTEKey(key.decode())
+        return
     
     if key == b'r':
         resetAll()
@@ -819,6 +821,7 @@ def keyHandler(key, x, y):
         cheat_active = not cheat_active
         cam_fixed = None
         look_fixed = None
+        print(f"Cheat Mode: {'ON' if cheat_active else 'OFF'}")
     
     if key == b'v':
         cheat_vision = not cheat_vision
@@ -829,19 +832,23 @@ def keyHandler(key, x, y):
     new_x = player_x
     new_y = player_y
     
+    # Super movement speed in cheat mode
+    speed_multiplier = CHEAT_SPEED_MULTIPLIER if cheat_active else 1.0
+    effective_speed = PLAYER_SPEED * speed_multiplier
+    
     if key == b'w':
-        new_x -= PLAYER_SPEED * math.sin(angle)
-        new_y += PLAYER_SPEED * math.cos(angle)
+        new_x -= effective_speed * math.sin(angle)
+        new_y += effective_speed * math.cos(angle)
     
     if key == b's':
-        new_x += PLAYER_SPEED * math.sin(angle)
-        new_y -= PLAYER_SPEED * math.cos(angle)
+        new_x += effective_speed * math.sin(angle)
+        new_y -= effective_speed * math.cos(angle)
     
-    if not cheat_active:
-        if key == b'a':
-            player_rot += PLAYER_SPEED
-        if key == b'd':
-            player_rot -= PLAYER_SPEED
+    # Player can always rotate
+    if key == b'a':
+        player_rot += PLAYER_SPEED
+    if key == b'd':
+        player_rot -= PLAYER_SPEED
     
     limit = GRID_LEN - 30
     if -limit <= new_x <= limit:
@@ -905,8 +912,27 @@ def camSetup():
 def update():
     global planet_attacker_list, bullets, enemy_list, score, boss_health, boss_active, pickups, game_over, life, player_ammo, planet_health
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_weapon_ammo, mega_shield_health
+    global qte_active, qte_triggered
+    global enemy_last_shot_times, last_boss_shot_time
     
     if game_over:
+        glutPostRedisplay()
+        return
+    
+    # QTE update
+    if QTE.isQTEActive():
+        QTE.updateQTE()
+        qte_result = QTE.getQTEResult()
+        if qte_result == "win":
+            # Player wins QTE
+            boss_active = False
+            score += 500
+            print("BOSS DEFEATED! QTE Success!")
+        elif qte_result == "lose":
+            # Player loses QTE
+            game_over = True
+            print("GAME OVER! QTE Failed!")
+        
         glutPostRedisplay()
         return
     
@@ -920,6 +946,21 @@ def update():
         game_over = True
         timer.stop_timer()
         print("Time up, game over")
+        glutPostRedisplay()
+        return
+    
+    # Check for QTE trigger (boss health 0)
+    if boss_active and boss_health <= 0 and not qte_triggered:
+        # QTE bypass in cheat mode
+        if cheat_active:
+            boss_active = False
+            score += 500
+            print("BOSS DEFEATED! Cheat Mode bypassed QTE!")
+        else:
+            qte_triggered = True
+            QTE.startQTE()
+            qte_active = True
+            print("BOSS HEALTH ZERO! QTE Triggered!")
         glutPostRedisplay()
         return
     
@@ -956,6 +997,10 @@ def update():
     moveBoss()
     moveBullets()
     
+    # Check enemy bullets hitting planet
+    enemy_bullets = enemy_ai.getEnemyBullets()
+    planet_health = collision.enemyBulletPlanetHit(enemy_bullets, planet_health)
+    
     old_health = planet_health
     
     # Planet Health Checker
@@ -967,12 +1012,16 @@ def update():
     
     # Imported from collision.py
     bullets, enemy_list, planet_attacker_list, boss_health, boss_active, pickups, score, game_over = collision.handleHits(
-        bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_health, boss_active, pickups, score, game_over
+        bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_health, boss_active, 
+        pickups, score, game_over, current_wave, player_has_mega_weapon
     )
     
     # Regular pickups only in wave 1 and 2
     if waveSystem.shouldSpawnPickups():
         pickups, life, player_ammo = collision.handlePickups(pickups, player_x, player_y, life, player_ammo)
+    else:
+        # In Wave 3, clear any existing pickups
+        pickups = []
     
     planet_attacker_list, planet_health = collision.planetHit(planet_attacker_list, planet_health, game_over)
     
@@ -1001,9 +1050,83 @@ def update():
     planet_attacker_list = enemy_ai.movePlanetAttackers(planet_attacker_list, 0, -1600)
     
     # Boss in wave 3
-    if current_wave == 3 and not boss_active:
+    if current_wave == 3 and not boss_active and not qte_triggered:
         initBoss()
         print("BOSS TIME! Wave 3 Boss activated!")
+        
+    # Enemy and Boss Shooting updation
+    # Enemy shooting
+    current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0
+    
+    # Regular enemies shoot
+    for i in range(len(enemy_list)):
+        ex, ey, erot = enemy_list[i]
+        last_shot = enemy_last_shot_times[i] if i < len(enemy_last_shot_times) else 0
+        
+        enemy_ai.enemy_bullets, new_last_shot = enemy_ai.enemyShoot(
+            ex, ey, erot, player_x, player_y, last_shot, current_time
+        )
+        
+        if i < len(enemy_last_shot_times):
+            enemy_last_shot_times[i] = new_last_shot
+    
+    # Boss shoots
+    if boss_active:
+        enemy_ai.boss_bullets, last_boss_shot_time = enemy_ai.bossShoot(
+            boss_x, boss_y, boss_rot, player_x, player_y, last_boss_shot_time, current_time
+        )
+    
+    # Move enemy bullets
+    enemy_ai.moveEnemyBullets()
+    enemy_ai.moveBossBullets()
+    
+        # Check enemy bullet hits on player
+    enemy_bullets = enemy_ai.getEnemyBullets()
+    boss_bullets = enemy_ai.getBossBullets()
+    
+    # Check regular enemy bullets
+    for bullet_data in enemy_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            continue
+        
+        # Check player hit
+        dx_player = bx - player_x
+        dy_player = by - player_y
+        player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+        
+        if player_dist < 25:  # Player hit radius
+            if player_has_mega_shield:
+                damage = 1 * waveSystem.getEnemyDamageMultiplier()
+                megaPowerUps.takeMegaShieldDamage(damage)
+                mega_shield_health = megaPowerUps.mega_shield_health
+            else:
+                life -= 0.05 # Regualr enemy bullet damage
+                if life <= 0:
+                    game_over = True
+                    life = 0
+    
+    # Check boss bullets
+    for bullet_data in boss_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            continue
+        
+        # Check player hit
+        dx_player = bx - player_x
+        dy_player = by - player_y
+        player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+        
+        if player_dist < 25:
+            if player_has_mega_shield:
+                damage = 200  
+                megaPowerUps.takeMegaShieldDamage(damage)
+                mega_shield_health = megaPowerUps.mega_shield_health
+            else:
+                life = 0 # Boss bullet damage
+                game_over = True
     
     glutPostRedisplay()
     
@@ -1026,7 +1149,7 @@ def display():
     
     # imported from models.py
     models.drawPlanet(1000, 0, -1600, 150) # Planet pos (Radius, x, y, z)
-    models.drawHeroUfo(player_x, player_y, 120 + PLAYER_HEIGHT, player_rot)
+    models.drawHeroUfo(player_x, player_y, 120 + PLAYER_HEIGHT, player_rot, cheat_active)
     
     # Health bars import from healthBar.py
     healthBar.drawHealthbar(player_x, player_y, PLAYER_HEIGHT, life, game_over, HEALTH_ORANGE, player_has_mega_shield, mega_shield_health)
@@ -1046,6 +1169,10 @@ def display():
     
     # From timer
     timer.draw_timer()
+    
+    # Display QTE
+    # Draw QTE if active
+    QTE.drawQTE()
 
     
     drawUI()
@@ -1053,6 +1180,35 @@ def display():
     # Draw mega power-ups
     megaPowerUps.drawMegaWeaponPickup()
     megaPowerUps.drawMegaShieldPickup()
+    
+    # Enemy Shooting things
+    # Draw enemy bullets
+    enemy_bullets = enemy_ai.getEnemyBullets()
+    for bullet_data in enemy_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            continue
+        
+        glColor3f(1, 0, 0)  # Red for enemy bullets
+        glPushMatrix()
+        glTranslatef(bx, by, 120 + PLAYER_HEIGHT - 40)
+        glutSolidCube(10)
+        glPopMatrix()
+    
+    # Draw boss bullets  
+    boss_bullets = enemy_ai.getBossBullets()
+    for bullet_data in boss_bullets:
+        if len(bullet_data) == 5:
+            bx, by, dx, dy, bullet_type = bullet_data
+        else:
+            continue
+        
+        glColor3f(1, 0.5, 0)  # Orange for boss bullets
+        glPushMatrix()
+        glTranslatef(bx, by, 120 + PLAYER_HEIGHT - 40)
+        glutSolidCube(20)
+        glPopMatrix()
 
     glutSwapBuffers()
     
