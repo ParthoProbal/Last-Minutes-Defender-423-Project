@@ -146,14 +146,6 @@ camera_mode = "third_person"  # "third_person" or "first_person"
 CAMERA_DISTANCE_SPEED = 20
 camera_distance = 500  # Initial camera distance
 
-
-
-
-# def handleCollisions():
-#     pass  
-
-
-
 def draw_text(x, y, text, font = GLUT_BITMAP_HELVETICA_18):
     glColor3f(1,1,1)
     glMatrixMode(GL_PROJECTION)
@@ -658,7 +650,32 @@ look_fixed = None
 def cameraFPS():
     global camera_pos, player_x, player_y, player_rot, cheat_vision, cheat_active, fps_mode, cam_fixed, look_fixed
     
-    if fps_mode and cheat_active and not cheat_vision:
+    if fps_mode:
+        # Calculate camera position for first-person view
+        angle = math.radians(player_rot)
+        
+        # Position camera at player's eye level (slightly above and behind)
+        # Instead of being inside the player, position it a bit behind
+        camera_distance = 50  # Distance behind player for better view
+        eye_height = 80  # Eye level height
+        
+        # Calculate camera position (behind and above player)
+        cam_x = player_x - camera_distance * math.sin(angle)
+        cam_y = player_y + camera_distance * math.cos(angle)
+        cam_z = 120 + PLAYER_HEIGHT + eye_height  # Eye level
+        
+        # Calculate look-at point (where player is aiming)
+        look_distance = 200  # How far ahead to look
+        look_x = player_x - look_distance * math.sin(angle)
+        look_y = player_y + look_distance * math.cos(angle)
+        look_z = cam_z - 20  # Look slightly downward
+        
+        gluLookAt(cam_x, cam_y, cam_z, 
+                  look_x, look_y, look_z, 
+                  0, 0, 1)
+        
+    elif fps_mode and cheat_active and not cheat_vision:
+        # Original cheat vision logic (if you want to keep it)
         if cam_fixed is None:
             angle = math.radians(player_rot)
             off_x = -30 * math.sin(angle)
@@ -678,6 +695,7 @@ def cameraFPS():
         lx, ly, lz = look_fixed
         gluLookAt(cx, cy, cz, lx, ly, lz, 0, 0, 1)
     else:
+        # Third-person view (original code)
         cam_fixed = None
         look_fixed = None
         angle = math.radians(player_rot)
@@ -696,10 +714,10 @@ def cameraFPS():
 def drawUI():
     global life, score, missed_shots, game_over, planet_health
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_shield_health
-    global is_paused  # NEW: Added pause state
+    global is_paused, fps_mode  # CHANGED from camera_mode to fps_mode
     
     if not game_over:
-        # NEW: Show pause indicator
+        # Show pause indicator
         if is_paused:
             draw_text(WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT - 50, "GAME PAUSED - Press P to resume", GLUT_BITMAP_HELVETICA_18)
         
@@ -724,13 +742,21 @@ def drawUI():
         time_left = timer.get_time_remaining()
         minutes = time_left // 60
         seconds = time_left % 60
-        draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"Time: {minutes:02d}:{seconds:02d}")
+        
+        # Show timer status in cheat mode
+        if cheat_active:
+            draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"Time: {minutes:02d}:{seconds:02d} (CHEAT)")
+        else:
+            draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 30, f"Time: {minutes:02d}:{seconds:02d}")
         
         # Wave display
         draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 60, f"Wave: {current_wave}")
         
-        # NEW: Camera mode display
-        draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 120, f"Camera: {camera_mode}")
+        # Camera mode display - UPDATED
+        if fps_mode:
+            draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 120, "Camera: First Person")
+        else:
+            draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 120, "Camera: Third Person")
     
         if boss_active:
             draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 90, f"BOSS: {boss_health}")
@@ -745,15 +771,17 @@ def resetAll():
     global life, score, missed_shots, game_over
     global player_x, player_y, player_rot
     global bullets, enemy_list, pickups, player_ammo
-    global cheat_active, cheat_vision, fps_mode
+    global cheat_active, cheat_vision, fps_mode  # CHANGED from camera_mode to fps_mode
     global planet_attacker_list, planet_health
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_weapon_ammo
     global boss_x, boss_y, boss_rot, boss_active, boss_health
     global last_mega_shot_time, mega_shield_health
-    global is_paused, camera_mode, camera_distance, camera_pos  # NEW: Reset pause and camera states
+    global is_paused, camera_distance, camera_pos  # REMOVED camera_mode
     
-    timer.stop_timer()
-    timer.start_timer()
+    # PROPER timer reset sequence
+    timer.stop_timer()  # Stop any running timer
+    timer.reset_timer()  # Reset timer variables
+    timer.start_timer()  # Start fresh timer (with 1 second delay)
     
     life = 5
     score = 0
@@ -775,13 +803,11 @@ def resetAll():
     cheat_vision = False
     fps_mode = False
     
-    # NEW: Reset pause and camera states
     is_paused = False
     camera_mode = "third_person"
     camera_distance = 500
     camera_pos = (0, camera_distance, camera_distance)
     
-    # Reset wave and mega power-ups
     waveSystem.resetWaveSystem()
     megaPowerUps.resetMegaPowerUps()
     current_wave = 1
@@ -791,23 +817,21 @@ def resetAll():
     mega_shield_health = 0
     last_mega_shot_time = 0
     
-    # Reset boss variables
     boss_x = 0
     boss_y = 0
     boss_rot = 0
     boss_active = False
     boss_health = BOSS_HEALTH
     
-    # Reset QTE
     QTE.resetQTE()
     qte_active = False
     qte_triggered = False
     
-    # Reset Enemy and Boss Bullets
-    # Reset enemy shooting
     enemy_ai.resetEnemyShooting()
     enemy_last_shot_times = []
     last_boss_shot_time = 0
+    
+    timer.disable_cheat_mode()
     
     printStats()
     
@@ -833,20 +857,23 @@ def cheat():
     # Infinite planet health
     planet_health = 99999
     
+    # Enable timer cheat mode
+    timer.enable_cheat_mode()
+    
 
 def keyHandler(key, x, y):
     global player_x, player_y, player_rot
     global cheat_active, cheat_vision, cam_fixed, look_fixed
     global game_over, qte_active
-    global is_paused, camera_mode  # NEW: Added pause and camera mode
+    global is_paused, camera_mode, fps_mode  # ADDED fps_mode to global
     
-    # NEW: ESC key to exit game
+    # ESC key to exit game
     if key == b'\x1b':  # ESC key
         glutDestroyWindow(glutGetWindow())
         sys.exit(0)
         return
     
-    # NEW: P key to pause/resume game
+    # P key to pause/resume game
     if key == b'p' or key == b'P':
         is_paused = not is_paused
         if is_paused:
@@ -857,13 +884,14 @@ def keyHandler(key, x, y):
             print("Game Resumed")
         return
     
-    # NEW: F key to switch camera mode
+    # F key to switch camera mode - FIXED
     if key == b'f' or key == b'F':
-        if camera_mode == "third_person":
-            camera_mode = "first_person"
+        fps_mode = not fps_mode  # Toggle fps_mode directly
+        cam_fixed = None
+        look_fixed = None
+        if fps_mode:
             print("Camera: First Person")
         else:
-            camera_mode = "third_person"
             print("Camera: Third Person")
         return
     
@@ -889,6 +917,12 @@ def keyHandler(key, x, y):
         cam_fixed = None
         look_fixed = None
         print(f"Cheat Mode: {'ON' if cheat_active else 'OFF'}")
+        
+        # Toggle timer cheat mode
+        if cheat_active:
+            timer.enable_cheat_mode()
+        else:
+            timer.disable_cheat_mode()
     
     if key == b'v':
         cheat_vision = not cheat_vision
@@ -949,7 +983,7 @@ def arrowKeys(key, x, y):
     
     xc, yc, zc = camera_pos
     
-    # NEW: Arrow Up/Down for camera distance
+    # Arrow Up/Down for camera distance
     if key == GLUT_KEY_UP:
         camera_distance -= CAMERA_DISTANCE_SPEED
         if camera_distance < 100:  # Minimum distance
@@ -988,12 +1022,19 @@ def printStats():
 def camSetup():
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(fovY, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1500)
+    
+    # Adjust field of view based on camera mode
+    if fps_mode:
+        # Wider FOV for first-person view
+        gluPerspective(90, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1500)
+    else:
+        gluPerspective(fovY, WINDOW_WIDTH/WINDOW_HEIGHT, 0.1, 1500)
+    
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     
-    # NEW: Camera mode selection
-    if camera_mode == "first_person" or fps_mode:
+    # Camera mode selection
+    if fps_mode:
         cameraFPS()
     else:
         x, y, z = camera_pos
@@ -1033,13 +1074,14 @@ def update():
         glutPostRedisplay()
         return
     
-    # # Timer updation
+    # Timer update
     timer.update_timer()
     
     current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0
     time_remaining = timer.get_time_remaining()
     
-    if (timer.get_time_remaining() <= 0 and timer.is_timer_active()):
+    # FIXED: Check timer but don't end game if cheat mode is active
+    if not cheat_active and timer.is_timer_expired():
         game_over = True
         timer.stop_timer()
         print("Time up, game over")
@@ -1100,12 +1142,15 @@ def update():
     
     old_health = planet_health
     
-    # Planet Health Checker
-    if planet_health <= 0:
+    # Planet Health Checker - Only end game if not in cheat mode
+    if planet_health <= 0 and not cheat_active:
         game_over = True
         planet_health = 0
         glutPostRedisplay()
         return
+    elif planet_health <= 0 and cheat_active:
+        # In cheat mode, keep planet alive
+        planet_health = 1
     
     # Imported from collision.py
     bullets, enemy_list, planet_attacker_list, boss_health, boss_active, pickups, score, game_over = collision.handleHits(
@@ -1125,20 +1170,33 @@ def update():
     if planet_health != old_health:
         print(f"Planet health changed: {old_health} -> {planet_health}")
     
-    # Player hit with mega shield
-    enemy_list, planet_attacker_list, life, game_over, bullets, damage_taken = collision.playerHit(
-        enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, 
-        life, game_over, bullets, player_has_mega_shield, mega_shield_health
-    )
+    # Player hit with mega shield - BUT NOT IN CHEAT MODE
+    if not cheat_active:
+        enemy_list, planet_attacker_list, life, game_over, bullets, damage_taken = collision.playerHit(
+            enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, 
+            life, game_over, bullets, player_has_mega_shield, mega_shield_health
+        )
+    else:
+        # In cheat mode, player doesn't take damage from enemy collisions
+        damage_taken = 0
+        # Call the function but ignore the game_over result
+        temp_enemy_list, temp_planet_attacker_list, temp_life, temp_game_over, temp_bullets, temp_damage_taken = collision.playerHit(
+            enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, 
+            life, game_over, bullets, player_has_mega_shield, mega_shield_health
+        )
+        # Keep the enemy and bullet updates but ignore life/game_over changes
+        enemy_list = temp_enemy_list
+        planet_attacker_list = temp_planet_attacker_list
+        bullets = temp_bullets
     
-    # Apply damage to mega shield
-    if player_has_mega_shield and damage_taken > 0:
+    # Apply damage to mega shield - but not in cheat mode
+    if player_has_mega_shield and damage_taken > 0 and not cheat_active:
         megaPowerUps.takeMegaShieldDamage(damage_taken)
         mega_shield_health = megaPowerUps.mega_shield_health
         print(f"Mega Shield took {damage_taken} damage! Remaining: {mega_shield_health}")
     
     # Wave damage stuff
-    if life < old_health:
+    if life < old_health and not cheat_active:
         wave_damage = waveSystem.getEnemyDamageMultiplier()
         print(f"Player got hit! Wave {current_wave} damage: {wave_damage}x")
     
@@ -1177,58 +1235,78 @@ def update():
     enemy_ai.moveEnemyBullets()
     enemy_ai.moveBossBullets()
     
-        # Check enemy bullet hits on player
+    # Check enemy bullet hits on player - BUT NOT IN CHEAT MODE
     enemy_bullets = enemy_ai.getEnemyBullets()
     boss_bullets = enemy_ai.getBossBullets()
     
-    # Check regular enemy bullets
-    for bullet_data in enemy_bullets:
-        if len(bullet_data) == 5:
-            bx, by, dx, dy, bullet_type = bullet_data
-        else:
-            continue
-        
-        # Check player hit
-        dx_player = bx - player_x
-        dy_player = by - player_y
-        player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
-        
-        if player_dist < 25:  # Player hit radius
-            if player_has_mega_shield:
-                damage = 1 * waveSystem.getEnemyDamageMultiplier()
-                megaPowerUps.takeMegaShieldDamage(damage)
-                mega_shield_health = megaPowerUps.mega_shield_health
+    # Only check player hits if cheat mode is OFF
+    if not cheat_active:
+        # Check regular enemy bullets
+        for bullet_data in enemy_bullets:
+            if len(bullet_data) == 5:
+                bx, by, dx, dy, bullet_type = bullet_data
             else:
-                life -= 0.05 # Regualr enemy bullet damage
-                if life <= 0:
+                continue
+            
+            # Check player hit
+            dx_player = bx - player_x
+            dy_player = by - player_y
+            player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+            
+            if player_dist < 25:  # Player hit radius
+                if player_has_mega_shield:
+                    damage = 1 * waveSystem.getEnemyDamageMultiplier()
+                    megaPowerUps.takeMegaShieldDamage(damage)
+                    mega_shield_health = megaPowerUps.mega_shield_health
+                else:
+                    life -= 0.05 # Regular enemy bullet damage
+                    if life <= 0:
+                        game_over = True
+                        life = 0
+        
+        # Check boss bullets
+        for bullet_data in boss_bullets:
+            if len(bullet_data) == 5:
+                bx, by, dx, dy, bullet_type = bullet_data
+            else:
+                continue
+            
+            # Check player hit
+            dx_player = bx - player_x
+            dy_player = by - player_y
+            player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+            
+            if player_dist < 25:
+                if player_has_mega_shield:
+                    damage = 200  
+                    megaPowerUps.takeMegaShieldDamage(damage)
+                    mega_shield_health = megaPowerUps.mega_shield_health
+                else:
+                    life = 0 # Boss bullet damage
                     game_over = True
-                    life = 0
     
-    # Check boss bullets
-    for bullet_data in boss_bullets:
-        if len(bullet_data) == 5:
-            bx, by, dx, dy, bullet_type = bullet_data
-        else:
-            continue
-        
-        # Check player hit
-        dx_player = bx - player_x
-        dy_player = by - player_y
-        player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
-        
-        if player_dist < 25:
-            if player_has_mega_shield:
-                damage = 200  
-                megaPowerUps.takeMegaShieldDamage(damage)
-                mega_shield_health = megaPowerUps.mega_shield_health
-            else:
-                life = 0 # Boss bullet damage
-                game_over = True
+    # FIX: In cheat mode, player cannot die from any cause
+    if cheat_active:
+        if life <= 0:
+            life = 1  # Keep at least 1 life
+        game_over = False  # Can't game over in cheat mode
     
     glutPostRedisplay()
-    
 
 def display():
+    # Check if game over and show black screen
+    if game_over:
+        # Black screen when game over
+        glClearColor(0, 0, 0, 1)  # Black background
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+        
+        # Show game over screen
+        drawGameOverScreen()
+        glutSwapBuffers()
+        return
+    
+    # Original display code for normal game
+    glClearColor(0, 0, 0, 1)  # Your original clear color
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
     glLoadIdentity()
     glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -1308,6 +1386,79 @@ def display():
         glPopMatrix()
 
     glutSwapBuffers()
+
+
+# Add game over screen function
+def drawGameOverScreen():
+    # Black background is already set by glClearColor
+    
+    # Set up orthographic projection for 2D text
+    glMatrixMode(GL_PROJECTION)
+    glPushMatrix()
+    glLoadIdentity()
+    gluOrtho2D(0, WINDOW_WIDTH, 0, WINDOW_HEIGHT)
+    
+    glMatrixMode(GL_MODELVIEW)
+    glPushMatrix()
+    glLoadIdentity()
+    
+    # Draw "GAME OVER" text
+    glColor3f(1, 0, 0)  # Red text
+    game_over_text = "GAME OVER"
+    text_width = len(game_over_text) * 20
+    text_x = (WINDOW_WIDTH - text_width) // 2
+    text_y = WINDOW_HEIGHT // 2 + 50
+    
+    glRasterPos2f(text_x, text_y)
+    for ch in game_over_text:
+        glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, ord(ch))
+    
+    # Draw score
+    glColor3f(1, 1, 1)  # White text
+    score_text = f"Final Score: {score}"
+    score_width = len(score_text) * 15
+    score_x = (WINDOW_WIDTH - score_width) // 2
+    score_y = WINDOW_HEIGHT // 2
+    
+    glRasterPos2f(score_x, score_y)
+    for ch in score_text:
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, ord(ch))
+    
+    # Draw restart instruction
+    restart_text = "Press R to Restart"
+    restart_width = len(restart_text) * 12
+    restart_x = (WINDOW_WIDTH - restart_width) // 2
+    restart_y = WINDOW_HEIGHT // 2 - 50
+    
+    glRasterPos2f(restart_x, restart_y)
+    for ch in restart_text:
+        glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ord(ch))
+    
+    # Draw cause of death
+    death_cause = ""
+    if planet_health <= 0:
+        death_cause = "Planet Destroyed!"
+    elif life <= 0:
+        death_cause = "Spaceship Destroyed!"
+    elif missed_shots >= MAX_MISS:
+        death_cause = "Too Many Missed Shots!"
+    elif timer.is_timer_expired() and not cheat_active:
+        death_cause = "Time's Up!"
+    
+    if death_cause:
+        cause_width = len(death_cause) * 12
+        cause_x = (WINDOW_WIDTH - cause_width) // 2
+        cause_y = WINDOW_HEIGHT // 2 - 100
+        
+        glColor3f(1, 0.5, 0)  # Orange text
+        glRasterPos2f(cause_x, cause_y)
+        for ch in death_cause:
+            glutBitmapCharacter(GLUT_BITMAP_HELVETICA_12, ord(ch))
+    
+    glPopMatrix()
+    glMatrixMode(GL_PROJECTION)
+    glPopMatrix()
+    glMatrixMode(GL_MODELVIEW)
     
 
 def main():
