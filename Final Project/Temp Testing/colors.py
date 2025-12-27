@@ -1,3 +1,4 @@
+#included in models## 
 divisor = 255 # Color Divisor
 
 # Planet color
@@ -27,4 +28,5 @@ BOSS_GUN_COLOR = (128/divisor, 0/divisor, 128/divisor)  # Gun color
 
 # Health & Ammo Pickup Box Colors
 HEALTH_BOX_COLOR = (1, 1, 1)  # White cube
+
 AMMO_BOX_COLOR = (75/divisor, 83/divisor, 32/divisor)  # Army green cube
