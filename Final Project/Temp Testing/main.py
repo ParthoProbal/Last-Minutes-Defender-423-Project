@@ -1,8 +1,8 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
-import random
+# REMOVED: import math
+# REMOVED: import random
 import models
 import enemy_ai
 import collision
@@ -11,8 +11,61 @@ import timer
 import waveSystem
 import megaPowerUps
 import QTE
-import sys  # Added for exit functionality
 
+# MANUAL MATH FUNCTIONS (since import math is not allowed)
+def manual_sqrt(x):
+    # Simple square root approximation
+    if x < 0:
+        return 0
+    guess = x / 2.0
+    for _ in range(10):  # 10 iterations for approximation
+        guess = (guess + x / guess) / 2.0
+    return guess
+
+def manual_atan2(y, x):
+    # Simple atan2 approximation
+    if x == 0:
+        if y > 0:
+            return 90.0
+        elif y < 0:
+            return -90.0
+        else:
+            return 0.0
+    
+    angle = y / x
+    # Simple approximation - for game purposes
+    result = angle * 57.2958  # Convert to degrees (180/pi ≈ 57.2958)
+    
+    if x < 0:
+        result += 180 if y >= 0 else -180
+    
+    return result
+
+def manual_sin(degrees):
+    # Simple sine approximation using degrees
+    radians = degrees * 0.0174533  # pi/180
+    # Simple Taylor series approximation
+    return radians - (radians**3)/6.0 + (radians**5)/120.0
+
+def manual_cos(degrees):
+    # Cosine = sine of complement
+    return manual_sin(90 - degrees)
+
+# MANUAL RANDOM FUNCTIONS (since import random is not allowed)
+manual_random_seed = 423  # Using your rand_var as seed
+
+def manual_random():
+    # Simple pseudo-random number generator
+    global manual_random_seed
+    manual_random_seed = (manual_random_seed * 1103515245 + 12345) & 0x7fffffff
+    return manual_random_seed / 0x7fffffff
+
+def manual_uniform(a, b):
+    return a + manual_random() * (b - a)
+
+def manual_choice(choices):
+    idx = int(manual_random() * len(choices))
+    return choices[idx]
 
 WINDOW_WIDTH = 1250
 WINDOW_HEIGHT = 1000
@@ -403,7 +456,8 @@ def moveEnemies():
         dx = player_x - ex
         dy = player_y - ey
         
-        dist = math.sqrt(dx*dx + dy*dy)
+        # REPLACED: math.sqrt with manual_sqrt
+        dist = manual_sqrt(dx*dx + dy*dy)
         
         if dist > 20: 
             wave_speed = ENEMY_SPEED * waveSystem.getEnemySpeedMultiplier()
@@ -411,7 +465,8 @@ def moveEnemies():
             ey += (dy / dist) * wave_speed
         
         # Always face the player
-        angle_to_player = math.degrees(math.atan2(dy, dx)) - 90
+        # REPLACED: math.degrees(math.atan2(dy, dx)) with manual_atan2
+        angle_to_player = manual_atan2(dy, dx) - 90
         erot = angle_to_player # Enemy rotation
         
         # boundary checks
@@ -427,8 +482,6 @@ def moveEnemies():
         enemy_list[i] = [ex, ey, erot]
         
 
-        
-
 def initEnemies():
     global enemy_list, enemy_last_shot_times
     
@@ -439,23 +492,25 @@ def initEnemies():
         enemy_last_shot_times = []  # Reset shot times
         
         for _ in range(ENEMY_COUNT):
-            side = random.choice([0, 1, 2, 3])
+            # REPLACED: random.choice with manual_choice
+            side = manual_choice([0, 1, 2, 3])
             
             if side == 0:
-                x = random.uniform(-half, half)
+                # REPLACED: random.uniform with manual_uniform
+                x = manual_uniform(-half, half)
                 y = -limit
                 rot = 0
             elif side == 1:
-                x = random.uniform(-half, half)
+                x = manual_uniform(-half, half)
                 y = limit
                 rot = 180
             elif side == 2:
                 x = -limit
-                y = random.uniform(-half, half)
+                y = manual_uniform(-half, half)
                 rot = 90
             else:
                 x = limit
-                y = random.uniform(-half, half)
+                y = manual_uniform(-half, half)
                 rot = 270
             
             enemy_list.append([x, y, rot])
@@ -488,23 +543,25 @@ def newEnemy():
     half = GRID_LEN
     limit = GRID_LEN - 30
     
-    side = random.choice([0, 1, 2, 3])
+    # REPLACED: random.choice with manual_choice
+    side = manual_choice([0, 1, 2, 3])
     
     if side == 0:
-        x = random.uniform(-half, half)
+        # REPLACED: random.uniform with manual_uniform
+        x = manual_uniform(-half, half)
         y = -limit
         rot = 0
     elif side == 1:
-        x = random.uniform(-half, half)
+        x = manual_uniform(-half, half)
         y = limit
         rot = 180
     elif side == 2:
         x = -limit
-        y = random.uniform(-half, half)
+        y = manual_uniform(-half, half)
         rot = 90
     else:
         x = limit
-        y = random.uniform(-half, half)
+        y = manual_uniform(-half, half)
         rot = 270
     
     return [x, y, rot]
@@ -552,12 +609,14 @@ def shoot():
             print("Mega Weapon out of ammo!")
             return
         
-        angle = math.radians(player_rot)
-        start_x = player_x - 30 * math.sin(angle)
-        start_y = player_y + 30 * math.cos(angle)
+        # REPLACED: math.radians with manual conversion
+        angle = player_rot * 0.0174533  # pi/180
+        # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+        start_x = player_x - 30 * manual_sin(angle * 57.2958)  # Convert back to degrees
+        start_y = player_y + 30 * manual_cos(angle * 57.2958)
         
-        dx = -math.sin(angle)
-        dy = math.cos(angle)
+        dx = -manual_sin(angle * 57.2958)
+        dy = manual_cos(angle * 57.2958)
         
         bullets.append([start_x, start_y, dx, dy, "mega"])  # Tag as mega bullet
         mega_weapon_ammo -= 1
@@ -571,12 +630,14 @@ def shoot():
         print("Out of ammo!")
         return
     
-    angle = math.radians(player_rot)
-    start_x = player_x - 30 * math.sin(angle)
-    start_y = player_y + 30 * math.cos(angle)
+    # REPLACED: math.radians with manual conversion
+    angle = player_rot * 0.0174533  # pi/180
+    # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+    start_x = player_x - 30 * manual_sin(angle * 57.2958)  # Convert back to degrees
+    start_y = player_y + 30 * manual_cos(angle * 57.2958)
     
-    dx = -math.sin(angle)
-    dy = math.cos(angle)
+    dx = -manual_sin(angle * 57.2958)
+    dy = manual_cos(angle * 57.2958)
     
     bullets.append([start_x, start_y, dx, dy, "normal"])  # Tag as normal bullet
     bullets_shot += 1
@@ -652,7 +713,8 @@ def cameraFPS():
     
     if fps_mode:
         # Calculate camera position for first-person view
-        angle = math.radians(player_rot)
+        # REPLACED: math.radians with manual conversion
+        angle = player_rot * 0.0174533  # pi/180
         
         # Position camera at player's eye level (slightly above and behind)
         # Instead of being inside the player, position it a bit behind
@@ -660,14 +722,15 @@ def cameraFPS():
         eye_height = 80  # Eye level height
         
         # Calculate camera position (behind and above player)
-        cam_x = player_x - camera_distance * math.sin(angle)
-        cam_y = player_y + camera_distance * math.cos(angle)
+        # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+        cam_x = player_x - camera_distance * manual_sin(angle * 57.2958)
+        cam_y = player_y + camera_distance * manual_cos(angle * 57.2958)
         cam_z = 120 + PLAYER_HEIGHT + eye_height  # Eye level
         
         # Calculate look-at point (where player is aiming)
         look_distance = 200  # How far ahead to look
-        look_x = player_x - look_distance * math.sin(angle)
-        look_y = player_y + look_distance * math.cos(angle)
+        look_x = player_x - look_distance * manual_sin(angle * 57.2958)
+        look_y = player_y + look_distance * manual_cos(angle * 57.2958)
         look_z = cam_z - 20  # Look slightly downward
         
         gluLookAt(cam_x, cam_y, cam_z, 
@@ -677,17 +740,19 @@ def cameraFPS():
     elif fps_mode and cheat_active and not cheat_vision:
         # Original cheat vision logic (if you want to keep it)
         if cam_fixed is None:
-            angle = math.radians(player_rot)
-            off_x = -30 * math.sin(angle)
-            off_y = 30 * math.cos(angle)
+            # REPLACED: math.radians with manual conversion
+            angle = player_rot * 0.0174533  # pi/180
+            # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+            off_x = -30 * manual_sin(angle * 57.2958)
+            off_y = 30 * manual_cos(angle * 57.2958)
             cam_fixed = (
                 player_x + off_x,
                 player_y + off_y,
                 115 + PLAYER_HEIGHT
             )
             look_fixed = (
-                player_x - 200 * math.sin(angle),
-                player_y + 200 * math.cos(angle),
+                player_x - 200 * manual_sin(angle * 57.2958),
+                player_y + 200 * manual_cos(angle * 57.2958),
                 0
             )
         
@@ -698,15 +763,17 @@ def cameraFPS():
         # Third-person view (original code)
         cam_fixed = None
         look_fixed = None
-        angle = math.radians(player_rot)
-        off_x = -30 * math.sin(angle)
-        off_y = 30 * math.cos(angle)
+        # REPLACED: math.radians with manual conversion
+        angle = player_rot * 0.0174533  # pi/180
+        # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+        off_x = -30 * manual_sin(angle * 57.2958)
+        off_y = 30 * manual_cos(angle * 57.2958)
         cx = player_x + off_x
         cy = player_y + off_y
         cz = 115 + PLAYER_HEIGHT
         
-        lx = player_x - 200 * math.sin(angle)
-        ly = player_y + 200 * math.cos(angle)
+        lx = player_x - 200 * manual_sin(angle * 57.2958)
+        ly = player_y + 200 * manual_cos(angle * 57.2958)
         
         gluLookAt(cx, cy, cz, lx, ly, 0, 0, 0, 1)
 
@@ -831,7 +898,7 @@ def resetAll():
     enemy_last_shot_times = []
     last_boss_shot_time = 0
     
-    timer.disable_cheat_mode()
+    timer.disable_timer_cheat()  
     
     printStats()
     
@@ -858,7 +925,7 @@ def cheat():
     planet_health = 99999
     
     # Enable timer cheat mode
-    timer.enable_cheat_mode()
+    timer.enable_timer_cheat()
     
 
 def keyHandler(key, x, y):
@@ -869,9 +936,10 @@ def keyHandler(key, x, y):
     
     # ESC key to exit game
     if key == b'\x1b':  # ESC key
+        print("ESC pressed - Game exiting")
+        # Proper GLUT exit
         glutDestroyWindow(glutGetWindow())
-        sys.exit(0)
-        return
+        return 
     
     # P key to pause/resume game
     if key == b'p' or key == b'P':
@@ -920,16 +988,17 @@ def keyHandler(key, x, y):
         
         # Toggle timer cheat mode
         if cheat_active:
-            timer.enable_cheat_mode()
+            timer.enable_timer_cheat() 
         else:
-            timer.disable_cheat_mode()
+            timer.disable_timer_cheat()  
     
     if key == b'v':
         cheat_vision = not cheat_vision
         cam_fixed = None
         look_fixed = None
     
-    angle = math.radians(player_rot)
+    # REPLACED: math.radians with manual conversion
+    angle = player_rot * 0.0174533  # pi/180
     new_x = player_x
     new_y = player_y
     
@@ -938,12 +1007,13 @@ def keyHandler(key, x, y):
     effective_speed = PLAYER_SPEED * speed_multiplier
     
     if key == b'w':
-        new_x -= effective_speed * math.sin(angle)
-        new_y += effective_speed * math.cos(angle)
+        # REPLACED: math.sin/math.cos with manual_sin/manual_cos
+        new_x -= effective_speed * manual_sin(angle * 57.2958)
+        new_y += effective_speed * manual_cos(angle * 57.2958)
     
     if key == b's':
-        new_x += effective_speed * math.sin(angle)
-        new_y -= effective_speed * math.cos(angle)
+        new_x += effective_speed * manual_sin(angle * 57.2958)
+        new_y -= effective_speed * manual_cos(angle * 57.2958)
     
     # Player can always rotate
     if key == b'a':
@@ -1107,7 +1177,7 @@ def update():
     waveSystem.updateWaveSystem(time_remaining)
     current_wave = waveSystem.getCurrentWave()
     
-    if current_time % 5 == 0:
+    if int(current_time) % 5 == 0:  # Changed to int() to avoid float modulus
         print(f"Timer: {time_remaining} seconds remaining, Wave: {current_wave}")
     
     # Mega Power Ups in Wave 3
@@ -1251,7 +1321,8 @@ def update():
             # Check player hit
             dx_player = bx - player_x
             dy_player = by - player_y
-            player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+            # REPLACED: math.sqrt with manual_sqrt
+            player_dist = manual_sqrt(dx_player*dx_player + dy_player*dy_player)
             
             if player_dist < 25:  # Player hit radius
                 if player_has_mega_shield:
@@ -1274,7 +1345,8 @@ def update():
             # Check player hit
             dx_player = bx - player_x
             dy_player = by - player_y
-            player_dist = math.sqrt(dx_player*dx_player + dy_player*dy_player)
+            # REPLACED: math.sqrt with manual_sqrt
+            player_dist = manual_sqrt(dx_player*dx_player + dy_player*dy_player)
             
             if player_dist < 25:
                 if player_has_mega_shield:
@@ -1285,11 +1357,22 @@ def update():
                     life = 0 # Boss bullet damage
                     game_over = True
     
-    # FIX: In cheat mode, player cannot die from any cause
-    if cheat_active:
-        if life <= 0:
-            life = 1  # Keep at least 1 life
-        game_over = False  # Can't game over in cheat mode
+    
+    if cheat_active and timer.is_timer_expired():
+        # Make player win automatically
+        boss_active = False
+        boss_health = 0
+        score += 1000  # Big bonus
+        print("CHEAT MODE: Auto-win!")
+        # Don't set game_over = True here - player wins, not loses
+    
+    # Only end game if timer expired AND NOT in cheat mode
+    if not cheat_active and timer.is_timer_expired():
+        game_over = True
+        timer.stop_timer()
+        print("Time up, game over")
+        glutPostRedisplay()
+        return
     
     glutPostRedisplay()
 
@@ -1325,7 +1408,9 @@ def display():
     # imported from models.py
     models.drawPlanet(1000, 0, -1600, 150) # Planet pos (Radius, x, y, z)
     models.drawHeroUfo(player_x, player_y, 120 + PLAYER_HEIGHT, player_rot, cheat_active)
-    
+    # Update models with game state
+    models.setGameOverState(game_over)
+    models.setCurrentWave(current_wave)
     # Health bars import from healthBar.py
     healthBar.drawHealthbar(player_x, player_y, PLAYER_HEIGHT, life, game_over, HEALTH_ORANGE, player_has_mega_shield, mega_shield_health)
     if not game_over or planet_health <= 0:
