@@ -1,3 +1,7 @@
+# Partho Probal (24121287)
+# Sadia Sunjana Shashee (22201656)
+# Tanjum Khondoker (22201481)
+
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
@@ -3243,3 +3247,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
