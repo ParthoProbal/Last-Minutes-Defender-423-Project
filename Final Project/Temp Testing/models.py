@@ -1,19 +1,34 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-import math
-import colors
+
+# Colors defined inline instead of importing colors module
+URANUS_BLUE = (0.4, 0.6, 0.9)
+UFO_BLACK = (0.1, 0.1, 0.1)
+UFO_WHITE = (0.9, 0.9, 0.9)
+UFO_LIGHT_GREY = (0.7, 0.7, 0.7)
+UFO_GUN_GREY = (0.5, 0.5, 0.5)
+ENEMY_BLUE = (0.2, 0.2, 0.8)
+ENEMY_BLACK = (0.05, 0.05, 0.05)
+ENEMY_YELLOW = (0.9, 0.9, 0.1)
+PLANET_ATTACKER_ORANGE = (0.9, 0.5, 0.1)
+PLANET_ATTACKER_GREEN = (0.2, 0.8, 0.2)
+BOSS_RED = (0.8, 0.1, 0.1)
+BOSS_WHITE = (0.95, 0.95, 0.95)
+BOSS_BALL_COLOR = (0.3, 0.3, 0.8)
+BOSS_GUN_COLOR = (0.4, 0.4, 0.9)
+HEALTH_BOX_COLOR = (1.0, 1.0, 1.0)
+AMMO_BOX_COLOR = (0.94, 0.90, 0.55)  # Khaki green
 
 # NEW: Global game state tracking
 game_over_state = False
 current_wave_state = 1
 
 def drawPlanet(radius, pos_x=0, pos_y=0, pos_z=0):
-
     glPushMatrix()
     glTranslatef(pos_x, pos_y, pos_z) # Planet x, y, z
     
-    glColor3f(colors.URANUS_BLUE[0], colors.URANUS_BLUE[1], colors.URANUS_BLUE[2])
+    glColor3f(URANUS_BLUE[0], URANUS_BLUE[1], URANUS_BLUE[2])
     
     glutSolidSphere(radius, 50, 50)  # Radius, Stack space x, y
     
@@ -25,7 +40,7 @@ def drawUfoBody():
     if game_over_state:
         glColor3f(0, 0, 0)  # Black when game over
     else:
-        glColor3f(colors.UFO_BLACK[0], colors.UFO_BLACK[1], colors.UFO_BLACK[2])
+        glColor3f(UFO_BLACK[0], UFO_BLACK[1], UFO_BLACK[2])
     glutSolidSphere(50, 30, 30) 
 
 def drawUfoHand():
@@ -33,7 +48,7 @@ def drawUfoHand():
     if game_over_state:
         glColor3f(0.2, 0.2, 0.2)  # Dark gray when game over
     else:
-        glColor3f(colors.UFO_WHITE[0], colors.UFO_WHITE[1], colors.UFO_WHITE[2])
+        glColor3f(UFO_WHITE[0], UFO_WHITE[1], UFO_WHITE[2])
     gluCylinder(gluNewQuadric(), 5, 3, 60, 10, 10)  
 
 def drawUfoCircle():
@@ -41,7 +56,7 @@ def drawUfoCircle():
     if game_over_state:
         glColor3f(0.1, 0.1, 0.1)  # Very dark gray when game over
     else:
-        glColor3f(colors.UFO_LIGHT_GREY[0], colors.UFO_LIGHT_GREY[1], colors.UFO_LIGHT_GREY[2])
+        glColor3f(UFO_LIGHT_GREY[0], UFO_LIGHT_GREY[1], UFO_LIGHT_GREY[2])
     glutSolidSphere(30, 20, 20)
 
 def drawUfoGun():
@@ -49,7 +64,7 @@ def drawUfoGun():
     if game_over_state:
         glColor3f(0.3, 0.3, 0.3)  # Gray when game over
     else:
-        glColor3f(colors.UFO_GUN_GREY[0], colors.UFO_GUN_GREY[1], colors.UFO_GUN_GREY[2])
+        glColor3f(UFO_GUN_GREY[0], UFO_GUN_GREY[1], UFO_GUN_GREY[2])
     glTranslatef(0, 0, 30)  
     glRotatef(-90, 1, 0, 0) 
     gluCylinder(gluNewQuadric(), 8, 4, 50, 10, 10)  # Gun: base radius 8, top 4, length 50
@@ -75,7 +90,7 @@ def drawHeroUfo(pos_x=0, pos_y=0, pos_z=120, rotation=0, cheat_mode = False):
         if game_over_state:
             glColor3f(0, 0, 0)  # Black when game over
         else:
-            glColor3f(colors.UFO_BLACK[0], colors.UFO_BLACK[1], colors.UFO_BLACK[2])
+            glColor3f(UFO_BLACK[0], UFO_BLACK[1], UFO_BLACK[2])
     
     glutSolidSphere(50, 30, 30) 
     
@@ -119,7 +134,7 @@ def drawEnemyBody():
     if game_over_state:
         glColor3f(0.05, 0.05, 0.15)  # Very dark blue when game over
     else:
-        glColor3f(colors.ENEMY_BLUE[0], colors.ENEMY_BLUE[1], colors.ENEMY_BLUE[2])
+        glColor3f(ENEMY_BLUE[0], ENEMY_BLUE[1], ENEMY_BLUE[2])
     glutSolidSphere(40, 30, 30) 
 
 def drawEnemyLeg():
@@ -127,7 +142,7 @@ def drawEnemyLeg():
     if game_over_state:
         glColor3f(0.1, 0.1, 0.1)  # Very dark when game over
     else:
-        glColor3f(colors.ENEMY_BLACK[0], colors.ENEMY_BLACK[1], colors.ENEMY_BLACK[2])
+        glColor3f(ENEMY_BLACK[0], ENEMY_BLACK[1], ENEMY_BLACK[2])
     gluCylinder(gluNewQuadric(), 6, 3, 50, 10, 10)  
 
 def drawEnemyTurret():
@@ -135,7 +150,7 @@ def drawEnemyTurret():
     if game_over_state:
         glColor3f(0.3, 0.3, 0.1)  # Dark yellow when game over
     else:
-        glColor3f(colors.ENEMY_YELLOW[0], colors.ENEMY_YELLOW[1], colors.ENEMY_YELLOW[2])
+        glColor3f(ENEMY_YELLOW[0], ENEMY_YELLOW[1], ENEMY_YELLOW[2])
     glTranslatef(0, 0, 30)  
     glRotatef(-90, 1, 0, 0) 
     gluCylinder(gluNewQuadric(), 8, 4, 40, 10, 10)
@@ -177,7 +192,7 @@ def drawPlanetAttackerBody():
     if game_over_state:
         glColor3f(0.15, 0.1, 0.05)  # Dark orange when game over
     else:
-        glColor3f(colors.PLANET_ATTACKER_ORANGE[0], colors.PLANET_ATTACKER_ORANGE[1], colors.PLANET_ATTACKER_ORANGE[2])
+        glColor3f(PLANET_ATTACKER_ORANGE[0], PLANET_ATTACKER_ORANGE[1], PLANET_ATTACKER_ORANGE[2])
     glutSolidSphere(35, 30, 30) 
 
 def drawPlanetAttackerSword():
@@ -185,7 +200,7 @@ def drawPlanetAttackerSword():
     if game_over_state:
         glColor3f(0.1, 0.2, 0.1)  # Dark green when game over
     else:
-        glColor3f(colors.PLANET_ATTACKER_GREEN[0], colors.PLANET_ATTACKER_GREEN[1], colors.PLANET_ATTACKER_GREEN[2])
+        glColor3f(PLANET_ATTACKER_GREEN[0], PLANET_ATTACKER_GREEN[1], PLANET_ATTACKER_GREEN[2])
     glTranslatef(0, 0, 30)  
     glRotatef(-90, 1, 0, 0) 
     gluCylinder(gluNewQuadric(), 10, 2, 60, 10, 10)  # Pusher, Wide base (10), narrow tip (2), length 60
@@ -213,7 +228,7 @@ def drawBossBody():
     if game_over_state:
         glColor3f(0.3, 0, 0)  # Dark red when game over
     else:
-        glColor3f(colors.BOSS_RED[0], colors.BOSS_RED[1], colors.BOSS_RED[2])  
+        glColor3f(BOSS_RED[0], BOSS_RED[1], BOSS_RED[2])  
     glutSolidSphere(75, 30, 30)  # Larger than hero (75 size)
 
 def drawBossHand():
@@ -221,7 +236,7 @@ def drawBossHand():
     if game_over_state:
         glColor3f(0.4, 0.4, 0.4)  # Dark gray when game over
     else:
-        glColor3f(colors.BOSS_WHITE[0], colors.BOSS_WHITE[1], colors.BOSS_WHITE[2])  
+        glColor3f(BOSS_WHITE[0], BOSS_WHITE[1], BOSS_WHITE[2])  
     gluCylinder(gluNewQuadric(), 7.5, 4.5, 90, 10, 10)  # Bigger
 
 def drawBossCircle():
@@ -229,7 +244,7 @@ def drawBossCircle():
     if game_over_state:
         glColor3f(0.2, 0.2, 0.4)  # Dark version when game over
     else:
-        glColor3f(colors.BOSS_BALL_COLOR[0], colors.BOSS_BALL_COLOR[1], colors.BOSS_BALL_COLOR[2])  
+        glColor3f(BOSS_BALL_COLOR[0], BOSS_BALL_COLOR[1], BOSS_BALL_COLOR[2])  
     glutSolidSphere(45, 20, 20)  # Bigger Hamd ball 
 
 def drawBossGun():
@@ -237,7 +252,7 @@ def drawBossGun():
     if game_over_state:
         glColor3f(0.3, 0.3, 0.6)  # Dark version when game over
     else:
-        glColor3f(colors.BOSS_GUN_COLOR[0], colors.BOSS_GUN_COLOR[1], colors.BOSS_GUN_COLOR[2]) 
+        glColor3f(BOSS_GUN_COLOR[0], BOSS_GUN_COLOR[1], BOSS_GUN_COLOR[2]) 
     glTranslatef(0, 0, 45)  
     glRotatef(-90, 1, 0, 0) 
     gluCylinder(gluNewQuadric(), 12, 6, 75, 10, 10) 
@@ -296,7 +311,7 @@ def drawHealthBox(pos_x =0, pos_y=0, pos_z=50):
     
     glTranslatef(pos_x, pos_y, pos_z)
     
-    glColor3f(colors.HEALTH_BOX_COLOR[0], colors.HEALTH_BOX_COLOR[1], colors.HEALTH_BOX_COLOR[2])
+    glColor3f(HEALTH_BOX_COLOR[0], HEALTH_BOX_COLOR[1], HEALTH_BOX_COLOR[2])
     glutSolidCube(30)  # White cube = 30 size
     
     glPopMatrix()
@@ -312,7 +327,7 @@ def drawAmmoBox(pos_x=0, pos_y=0, pos_z=50):
     
     glTranslatef(pos_x, pos_y, pos_z)
     
-    glColor3f(colors.AMMO_BOX_COLOR[0], colors.AMMO_BOX_COLOR[1], colors.AMMO_BOX_COLOR[2])
+    glColor3f(AMMO_BOX_COLOR[0], AMMO_BOX_COLOR[1], AMMO_BOX_COLOR[2])
     glutSolidCube(30)  # Khaki green = size 30
     
     glPopMatrix()
