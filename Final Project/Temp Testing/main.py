@@ -1,8 +1,6 @@
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
-# REMOVED: import math
-# REMOVED: import random
 import models
 import enemy_ai
 import collision
@@ -11,6 +9,7 @@ import timer
 import waveSystem
 import megaPowerUps
 import QTE
+#colors included in models#
 
 # MANUAL MATH FUNCTIONS (since import math is not allowed)
 def manual_sqrt(x):
