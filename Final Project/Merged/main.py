@@ -4,7 +4,7 @@ from OpenGL.GLU import *
 import math
 import random
 
-# ===== COLORS MODULE (merged from colors.py) =====
+# ===== COLORS MODULE =====
 divisor = 255 # Color Divisor
 
 # Planet color
@@ -35,8 +35,7 @@ BOSS_GUN_COLOR = (128/divisor, 0/divisor, 128/divisor)  # Gun color
 HEALTH_BOX_COLOR = (1, 1, 1)  # White cube
 AMMO_BOX_COLOR = (75/divisor, 83/divisor, 32/divisor)  # Army green cube
 
-# ===== MODELS MODULE (merged from models.py) =====
-# Colors defined inline instead of importing colors module
+# ===== MODELS MODULE =====
 URANUS_BLUE = (0.4, 0.6, 0.9)
 UFO_BLACK = (0.1, 0.1, 0.1)
 UFO_WHITE = (0.9, 0.9, 0.9)
@@ -54,13 +53,14 @@ BOSS_GUN_COLOR = (0.4, 0.4, 0.9)
 HEALTH_BOX_COLOR = (1.0, 1.0, 1.0)
 AMMO_BOX_COLOR = (0.94, 0.90, 0.55)  # Khaki green
 
-# NEW: Global game state tracking
+# Global game state tracking
 game_over_state = False
 current_wave_state = 1
 
 # Global Vars Misc
 CHEAT_SPEED_MULTIPLIER = 3
 is_paused = False
+game_win = False # Did we win the game?
 
 def drawPlanet(radius, pos_x=0, pos_y=0, pos_z=0):
     glPushMatrix()
@@ -74,7 +74,6 @@ def drawPlanet(radius, pos_x=0, pos_y=0, pos_z=0):
 
 # Body parts start
 def drawUfoBody():
-    # NEW: Black color when game over
     if game_over_state:
         glColor3f(0, 0, 0)  # Black when game over
     else:
@@ -82,7 +81,7 @@ def drawUfoBody():
     glutSolidSphere(50, 30, 30) 
 
 def drawUfoHand():
-    # NEW: Dark gray when game over
+    # Dark gray when game over
     if game_over_state:
         glColor3f(0.2, 0.2, 0.2)  # Dark gray when game over
     else:
@@ -90,7 +89,7 @@ def drawUfoHand():
     gluCylinder(gluNewQuadric(), 5, 3, 60, 10, 10)  
 
 def drawUfoCircle():
-    # NEW: Dark gray when game over
+    # Dark gray when game over
     if game_over_state:
         glColor3f(0.1, 0.1, 0.1)  # Very dark gray when game over
     else:
@@ -98,7 +97,6 @@ def drawUfoCircle():
     glutSolidSphere(30, 20, 20)
 
 def drawUfoGun():
-    # NEW: Dark gray when game over
     if game_over_state:
         glColor3f(0.3, 0.3, 0.3)  # Gray when game over
     else:
@@ -118,13 +116,13 @@ def drawHeroUfo(pos_x=0, pos_y=0, pos_z=120, rotation=0, cheat_mode = False):
     
     # Cheat mode color to regular mode
     if cheat_mode:
-        # NEW: Game over takes priority over cheat mode
+        # Game over takes priority over cheat mode
         if game_over_state:
             glColor3f(0, 0, 0)  # Black when game over
         else:
             glColor3f(0, 1, 0)  # Green in cheat mode
     else:
-        # NEW: Black when game over, otherwise normal color
+        # Black when game over, otherwise normal color
         if game_over_state:
             glColor3f(0, 0, 0)  # Black when game over
         else:
@@ -168,7 +166,7 @@ def drawHeroUfo(pos_x=0, pos_y=0, pos_z=120, rotation=0, cheat_mode = False):
     
 # Hero Attacker Enemy
 def drawEnemyBody():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.05, 0.05, 0.15)  # Very dark blue when game over
     else:
@@ -176,7 +174,7 @@ def drawEnemyBody():
     glutSolidSphere(40, 30, 30) 
 
 def drawEnemyLeg():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.1, 0.1, 0.1)  # Very dark when game over
     else:
@@ -184,7 +182,7 @@ def drawEnemyLeg():
     gluCylinder(gluNewQuadric(), 6, 3, 50, 10, 10)  
 
 def drawEnemyTurret():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.3, 0.3, 0.1)  # Dark yellow when game over
     else:
@@ -226,7 +224,7 @@ def drawHeroAttacker(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     
 # Planet Attacker Enemy
 def drawPlanetAttackerBody():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.15, 0.1, 0.05)  # Dark orange when game over
     else:
@@ -234,7 +232,7 @@ def drawPlanetAttackerBody():
     glutSolidSphere(35, 30, 30) 
 
 def drawPlanetAttackerSword():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.1, 0.2, 0.1)  # Dark green when game over
     else:
@@ -262,7 +260,7 @@ def drawPlanetAttacker(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     
 # Boss Enemy Parts
 def drawBossBody():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.3, 0, 0)  # Dark red when game over
     else:
@@ -270,7 +268,7 @@ def drawBossBody():
     glutSolidSphere(75, 30, 30)  # Larger than hero (75 size)
 
 def drawBossHand():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.4, 0.4, 0.4)  # Dark gray when game over
     else:
@@ -278,7 +276,7 @@ def drawBossHand():
     gluCylinder(gluNewQuadric(), 7.5, 4.5, 90, 10, 10)  # Bigger
 
 def drawBossCircle():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.2, 0.2, 0.4)  # Dark version when game over
     else:
@@ -286,7 +284,7 @@ def drawBossCircle():
     glutSolidSphere(45, 20, 20)  # Bigger Hamd ball 
 
 def drawBossGun():
-    # NEW: Darker when game over
+    # Darker when game over
     if game_over_state:
         glColor3f(0.3, 0.3, 0.6)  # Dark version when game over
     else:
@@ -340,7 +338,7 @@ def drawBossEnemy(pos_x=0, pos_y=0, pos_z=120, rotation=0):
     
 # Health Pickup Box
 def drawHealthBox(pos_x =0, pos_y=0, pos_z=50):
-    # NEW: Conditional rendering based on wave
+    # Conditional rendering based on wave
     # Don't render health boxes in Wave 3
     if current_wave_state == 3:
         return  # Don't draw anything
@@ -356,7 +354,6 @@ def drawHealthBox(pos_x =0, pos_y=0, pos_z=50):
 
 # Ammo Pickup Box
 def drawAmmoBox(pos_x=0, pos_y=0, pos_z=50):
-    # NEW: Conditional rendering based on wave
     # Don't render ammo boxes in Wave 3 (only mega power-ups allowed)
     if current_wave_state == 3:
         return  # Don't draw anything
@@ -370,7 +367,7 @@ def drawAmmoBox(pos_x=0, pos_y=0, pos_z=50):
     
     glPopMatrix()
 
-# NEW: Functions to update game state
+# Functions to update game state
 def setGameOverState(is_game_over):
     global game_over_state
     game_over_state = is_game_over
@@ -379,7 +376,7 @@ def setCurrentWave(wave_number):
     global current_wave_state
     current_wave_state = wave_number
 
-# NEW: Helper function to check if we should render pickups
+# Helper function to check if we should render pickups
 def shouldRenderPickup(pickup_type):
     # Don't render any regular pickups in Wave 3
     if current_wave_state == 3:
@@ -391,7 +388,7 @@ def shouldRenderPickup(pickup_type):
     
     return True
 
-# ===== ENEMY_AI MODULE (merged from enemy_ai.py) =====
+# ===== ENEMY_AI MODULE =====
 import random
 import math
 
@@ -521,34 +518,17 @@ def initBoss():
     
     return [x, y, rot]
 
-def moveBoss(boss_x, boss_y, boss_rot, player_x, player_y, boss_speed=1):
-    limit = 570  # GRID_LEN - 30
+def updateBossPosition():
+    global boss_x, boss_y, boss_rot
     
-    # Move toward player (like regular enemy for now)
-    dx = player_x - boss_x
-    dy = player_y - boss_y
+    if not boss_active:
+        return
     
-    dist = math.sqrt(dx*dx + dy*dy)
-    
-    if dist > 20:  # Collision check
-        boss_x += (dx / dist) * boss_speed
-        boss_y += (dy / dist) * boss_speed
-    
-    # Always face the player
-    angle_to_player = math.degrees(math.atan2(dy, dx)) - 90
-    boss_rot = angle_to_player
-    
-    # boundary checks
-    if boss_x < -limit:
-        boss_x = -limit
-    if boss_x > limit:
-        boss_x = limit
-    if boss_y < -limit:
-        boss_y = -limit
-    if boss_y > limit:
-        boss_y = limit
-    
-    return boss_x, boss_y, boss_rot
+    boss_x, boss_y, boss_rot = moveBoss(
+        boss_x, boss_y, boss_rot, 
+        player_x, player_y, 
+        ENEMY_SPEED  # regular enemy speed for testing
+    )
 
 # Only 1 Planet Attacker will spawn helper method
 def initSinglePlanetAttacker():
@@ -672,7 +652,7 @@ def resetEnemyShooting():
     last_enemy_shot = 0
     last_boss_shot = 0
 
-# ===== COLLISION MODULE (merged from collision.py) =====
+# ===== COLLISION MODULE =====
 import math
 
 def hitTest(bx, by, ex, ey):
@@ -701,7 +681,7 @@ def handleHits(bullets, enemy_list, planet_attacker_list, boss_x, boss_y, boss_h
         hit = False
         
         # Mega bullet damage
-        damage = 10 if bullet_type == "mega" else 1
+        damage = 400 if bullet_type == "mega" else 1
         
         # Check boss hit
         if boss_active:
@@ -931,7 +911,7 @@ def enemyBulletPlanetHit(enemy_bullets, planet_health):
     
     return planet_health
 
-# ===== HEALTHBAR MODULE (merged from healthBar.py) =====
+# ===== HEALTHBAR MODULE =====
 def drawHealthbar(player_x, player_y, PLAYER_HEIGHT, life, game_over, HEALTH_ORANGE, player_has_mega_shield=False, mega_shield_health=0):
     if game_over:
         return
@@ -1128,7 +1108,7 @@ def drawBossHealthBar(boss_health, boss_max_health=1000, BOSS_NAME="SKY CAPTAIN"
     
     glPopMatrix()
 
-# ===== TIMER MODULE (merged from timer.py) =====
+# ===== TIMER MODULE =====
 # Global timer vars
 GAME_DURATION = 60  # Total game timer
 time_remaining = GAME_DURATION
@@ -1246,7 +1226,6 @@ def draw_timer():
     timer_y = 50
     
     if is_timer_paused:
-        # Use glutGet for time instead of time.time()
         current_ms = glutGet(GLUT_ELAPSED_TIME)
         blink = (current_ms // 500) % 2
         if blink:
@@ -1319,12 +1298,12 @@ def is_timer_expired():
 def update_timer():
     pass
 
-# ===== WAVE SYSTEM MODULE (merged from waveSystem.py) =====
+# ===== WAVE SYSTEM MODULE =====
 # Wave Variables
 current_wave = 1
 wave_started = False
-WAVE1_END = 40
-WAVE2_END = 25
+WAVE1_END = 40 # 40
+WAVE2_END = 25 # 25
 WAVE3_END = 0
 enemy_speed_multiplier = 1.0
 enemy_damage_multiplier = 1.0
@@ -1341,7 +1320,6 @@ def updateWaveSystem(time_remaining):
     if wave_paused:
         return current_wave
     
-    # Your existing wave logic...
     if time_remaining > WAVE1_END:
         new_wave = 1
         enemy_speed_multiplier = 1.0
@@ -1427,7 +1405,7 @@ def resetWaveSystem():
     boss_active_wave3 = False
     wave_paused = False
 
-# ===== MEGA POWERUPS MODULE (merged from megaPowerUps.py) =====
+# ===== MEGA POWERUPS MODULE =====
 import random
 import math
 
@@ -1573,7 +1551,7 @@ def resetMegaPowerUps():
     mega_weapon_pickup = []
     mega_shield_pickup = []
 
-# ===== QTE MODULE (merged from QTE.py) =====
+# ===== QTE MODULE =====
 import random
 import time
 
@@ -1585,6 +1563,13 @@ qte_time_remaining = 1
 qte_start_time = 0
 qte_result = None  # "win" or "lose"
 qte_keys = ["W", "A", "S", "D"] # More or different keys can be added
+
+# QTE Helper Methods
+def isQTEActive():
+    return qte_active
+
+def getQTEResult():
+    return qte_result
 
 def startQTE():
     global qte_active, qte_key, qte_time_remaining, qte_start_time, qte_result
@@ -1731,14 +1716,14 @@ rand_var = 423
 GRID_LEN = 600  
 
 # Color stuff
-CHECKER_COLOR = (172/divisor, 120/divisor, 186/divisor) # Lavender
+CHECKER_COLOR = (128/divisor, 128/divisor, 128/divisor) # Grey
 # Add this with other colors
 HEALTH_ORANGE = (255/divisor, 165/divisor, 0/divisor)
 
 # Wall colors
-LIGHT_GREEN = (57/divisor, 255/divisor, 20/divisor)
-BLUE_ROYAL = (65/divisor, 105/divisor, 225/divisor)
-CYAN = (0/divisor, 255/divisor, 255/divisor)
+LIGHT_GREEN = (0/divisor, 0/divisor, 0/divisor)
+BLUE_ROYAL = (0/divisor, 0/divisor, 0/divisor)
+CYAN = (0/divisor, 0/divisor, 0/divisor)
 
 # player stuff (My Fav Leon!)
 PLAYER_HEIGHT = 45
@@ -1791,16 +1776,16 @@ last_fired = {}
 FIRE_DELAY = 0.1
 
 # Planet Stuff
-planet_health = 100
-planet_max_health = 100
+planet_health = 1000
+planet_max_health = 1000
 
 # game state
 bullets_shot = 0
-life = 5
+life = 100
 score = 0
 missed_shots = 0
 game_over = False
-MAX_MISS = 10
+MAX_MISS = 100000
 
 # Wave and Mega Power-Up Variables
 current_wave = 1
@@ -1818,11 +1803,10 @@ boss_y = 0
 boss_rot = 0
 boss_active = False  # Will activate in Wave 3
 boss_health = BOSS_HEALTH
-
 # Ammo and Health Pickup Variables
 pickups = []  # Tuple of [x, y, type] "health" or "ammo"
 player_ammo = 10  # Player ammo count
-player_max_health = 5  # For testing for now
+player_max_health = 100  # For testing for now
 
 # Wave and Power-Up Variables
 current_wave = 1
@@ -1842,13 +1826,13 @@ last_boss_shot_time = 0
 enemy_last_shot_times = []
 last_boss_shot_time = 0
 
-# NEW: Game pause state
+# Game pause state
 is_paused = False
 
-# NEW: Camera mode (first-person/third-person toggle)
+# Camera mode (first-person/third-person toggle)
 camera_mode = "third_person"  # "third_person" or "first_person"
 
-# NEW: Camera distance for arrow keys
+# Camera distance for arrow keys
 CAMERA_DISTANCE_SPEED = 20
 camera_distance = 500  # Initial camera distance
 
@@ -1888,7 +1872,7 @@ def drawCheckerboard():
             y2 = y1 + cell
             
             if (row + col) % 2 == 0:
-                glColor3f(1, 1, 1)
+                glColor3f(0, 0, 0)
             else:
                 glColor3f(CHECKER_COLOR[0], CHECKER_COLOR[1], CHECKER_COLOR[2])
             
@@ -1913,7 +1897,7 @@ def drawWalls():
     glVertex3f(-half, half, wall_height)
     
     # left
-    glColor3f(1, 1, 1)
+    glColor3f(0, 0, 0)
     glVertex3f(half, half, 0)
     glVertex3f(half, -half, 0)
     glVertex3f(half, -half, wall_height)
@@ -1990,7 +1974,7 @@ def drawPlayer():
         glRotatef(player_rot, 0, 0, 1)
         glTranslatef(0, 0, 10)
         
-        # NEW: Change player to black when game over
+        # Change player to black when game over
         if game_over:
             glColor3f(0, 0, 0)  # Black for game over
         else:
@@ -2026,7 +2010,7 @@ def drawDeadPlayer():
     glRotatef(player_rot, 0, 0, 1)
     glTranslatef(0, 0, 10)
     
-    # NEW: Change player to black when game over
+    # Change player to black when game over
     glColor3f(0, 0, 0)  # Black for game over
     head()
     
@@ -2166,20 +2150,36 @@ def initEnemies():
             enemy_last_shot_times.append(0)
             
 # Boss Move Functions # From Enemy Ai
-def moveBoss():
-    global boss_x, boss_y, boss_rot
+def moveBoss(boss_x, boss_y, boss_rot, player_x, player_y, boss_speed=1):
+    limit = 570  # GRID_LEN - 30
     
-    if not boss_active:
-        return
+    # Move toward player (like regular enemy for now)
+    dx = player_x - boss_x
+    dy = player_y - boss_y
     
+    dist = math.sqrt(dx*dx + dy*dy)
     
-    boss_x, boss_y, boss_rot = moveBoss(
-        boss_x, boss_y, boss_rot, 
-        player_x, player_y, 
-        ENEMY_SPEED  # regular enemy speed for testing
-    )
+    if dist > 20:  # Collision check
+        boss_x += (dx / dist) * boss_speed
+        boss_y += (dy / dist) * boss_speed
     
-def initBoss():
+    # Always face the player
+    angle_to_player = math.degrees(math.atan2(dy, dx)) - 90
+    boss_rot = angle_to_player
+    
+    # boundary checks
+    if boss_x < -limit:
+        boss_x = -limit
+    if boss_x > limit:
+        boss_x = limit
+    if boss_y < -limit:
+        boss_y = -limit
+    if boss_y > limit:
+        boss_y = limit
+    
+    return boss_x, boss_y, boss_rot
+    
+def initBossInGame():
     global boss_x, boss_y, boss_rot, boss_active, boss_health
     
     # From Enemy.py
@@ -2302,7 +2302,7 @@ def moveBullets():
     for bullet_data in bullets:
         if len(bullet_data) == 5:
             bx, by, dx, dy, bullet_type = bullet_data
-        else:  # For backward compatibility
+        else:
             bx, by, dx, dy = bullet_data
             bullet_type = "normal"
         
@@ -2359,8 +2359,7 @@ def cameraFPS():
         angle = math.radians(player_rot)
         
         # Position camera at player's eye level (slightly above and behind)
-        # Instead of being inside the player, position it a bit behind
-        camera_distance = 50  # Distance behind player for better view
+        camera_distance = 50  # Distance behind player
         eye_height = 80  # Eye level height
         
         # Calculate camera position (behind and above player)
@@ -2379,7 +2378,7 @@ def cameraFPS():
                   0, 0, 1)
         
     elif fps_mode and cheat_active and not cheat_vision:
-        # Original cheat vision logic (if you want to keep it)
+        # Original cheat vision logic
         if cam_fixed is None:
             angle = math.radians(player_rot)
             off_x = -30 * math.sin(angle)
@@ -2418,7 +2417,22 @@ def cameraFPS():
 def drawUI():
     global life, score, missed_shots, game_over, planet_health
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_shield_health
-    global is_paused, fps_mode  # CHANGED from camera_mode to fps_mode
+    global is_paused, fps_mode
+    global game_win, boss_active
+    
+    if game_win:  # Win Screen
+        # Center the win message
+        draw_text(WINDOW_WIDTH // 2 - 200, WINDOW_HEIGHT // 2 + 100, "VICTORY ACHIEVED!", GLUT_BITMAP_TIMES_ROMAN_24)
+        draw_text(WINDOW_WIDTH // 2 - 150, WINDOW_HEIGHT // 2 + 50, "BOSS DEFEATED!", GLUT_BITMAP_HELVETICA_18)
+        draw_text(WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2, f"FINAL SCORE: {score}")
+        
+        # Show time remaining bonus
+        time_bonus = get_time_remaining() * 10
+        draw_text(WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2 - 30, f"TIME BONUS: +{time_bonus}")
+        draw_text(WINDOW_WIDTH // 2 - 100, WINDOW_HEIGHT // 2 - 60, f"TOTAL: {score + time_bonus}")
+        
+        draw_text(WINDOW_WIDTH // 2 - 150, WINDOW_HEIGHT // 2 - 120, "Press R to play again")
+        return
     
     if not game_over:
         # Show pause indicator
@@ -2456,7 +2470,7 @@ def drawUI():
         # Wave display
         draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 60, f"Wave: {current_wave}")
         
-        # Camera mode display - UPDATED
+        # Camera mode display
         if fps_mode:
             draw_text(WINDOW_WIDTH - 150, WINDOW_HEIGHT - 120, "Camera: First Person")
         else:
@@ -2468,6 +2482,8 @@ def drawUI():
         draw_text(10, WINDOW_HEIGHT - 30, f"GAME OVER! Score: {score}")
         if planet_health <= 0:
             draw_text(10, WINDOW_HEIGHT - 60, "Planet Destroyed!")
+        elif boss_active and boss_health <= 0:
+            draw_text(10, WINDOW_HEIGHT - 60, "BOSS DEFEATED!")
         draw_text(10, WINDOW_HEIGHT - 90, "Press R to restart")
         
 
@@ -2475,33 +2491,37 @@ def resetAll():
     global life, score, missed_shots, game_over
     global player_x, player_y, player_rot
     global bullets, enemy_list, pickups, player_ammo
-    global cheat_active, cheat_vision, fps_mode  # CHANGED from camera_mode to fps_mode
+    global cheat_active, cheat_vision, fps_mode
     global planet_attacker_list, planet_health
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_weapon_ammo
     global boss_x, boss_y, boss_rot, boss_active, boss_health
     global last_mega_shot_time, mega_shield_health
-    global is_paused, camera_distance, camera_pos  # REMOVED camera_mode
+    global is_paused, camera_distance, camera_pos
+    global game_win
+    global enemy_bullets, boss_bullets
     
-    # PROPER timer reset sequence
-    stop_timer()  # Stop any running timer
-    reset_timer()  # Reset timer variables
-    start_timer()  # Start fresh timer (with 1 second delay)
+    stop_timer()  
+    reset_timer()  
+    start_timer()
     
-    life = 5
+    life = 100
     score = 0
     missed_shots = 0
     game_over = False
+    game_win = False
     
     player_x = 0
     player_y = 0
     player_rot = 0
     
     bullets = []
+    enemy_bullets = []  
+    boss_bullets = []
     enemy_list = []
     planet_attacker_list = initPlanetAttackers(PLANET_ATTACKER_COUNT)
     pickups = []  
     player_ammo = 10
-    planet_health = 100
+    planet_health = 1000
     
     cheat_active = False
     cheat_vision = False
@@ -2568,7 +2588,7 @@ def keyHandler(key, x, y):
     global player_x, player_y, player_rot
     global cheat_active, cheat_vision, cam_fixed, look_fixed
     global game_over, qte_active
-    global is_paused, camera_mode, fps_mode  # ADDED fps_mode to global
+    global is_paused, camera_mode, fps_mode 
     
     # ESC key to exit game
     if key == b'\x1b':  # ESC key
@@ -2588,7 +2608,7 @@ def keyHandler(key, x, y):
             print("Game Resumed")
         return
     
-    # F key to switch camera mode - FIXED
+    # F key to switch camera mode
     if key == b'f' or key == b'F':
         fps_mode = not fps_mode  # Toggle fps_mode directly
         cam_fixed = None
@@ -2609,7 +2629,7 @@ def keyHandler(key, x, y):
         resetAll()
         return
     
-    if game_over:
+    if game_over or game_win:
         return
     
     # Don't process movement if game is paused
@@ -2751,10 +2771,11 @@ def update():
     global current_wave, player_has_mega_weapon, player_has_mega_shield, mega_weapon_ammo, mega_shield_health
     global qte_active, qte_triggered
     global enemy_last_shot_times, last_boss_shot_time
-    global is_paused  # NEW: Added pause state
+    global is_paused, game_win
+    global enemy_bullets, boss_bullets
     
-    # NEW: Don't update if game is paused
-    if is_paused:
+    # Don't update if game is paused, won, or over
+    if is_paused or game_win or game_over:
         glutPostRedisplay()
         return
     
@@ -2762,22 +2783,38 @@ def update():
         glutPostRedisplay()
         return
     
-    # QTE update
+    # QTE update - moved up to handle win state immediately
     if isQTEActive():
         updateQTE()
         qte_result = getQTEResult()
         if qte_result == "win":
             # Player wins QTE
             boss_active = False
-            score += 500
-            print("BOSS DEFEATED! QTE Success!")
+            boss_health = 0  # Set boss health is 0
+            game_win = True  # Set win state
+            
+            # Add time bonus
+            time_bonus = get_time_remaining() * 10
+            score += 500 + time_bonus  # Base 500 + time bonus
+            
+            print(f"YOU WIN! BOSS DEFEATED! QTE Success!")
+            print(f"Base Score: 500, Time Bonus: {time_bonus}, Total: {score}")
+            
+            # Stop all gameplay
+            stop_timer()
+            bullets = []  # Clear all bullets
+            enemy_bullets = []  # Clear enemy bullets
+            boss_bullets = []  # Clear boss bullets
+            
+            glutPostRedisplay()
+            return
+        
         elif qte_result == "lose":
             # Player loses QTE
             game_over = True
             print("GAME OVER! QTE Failed!")
-        
-        glutPostRedisplay()
-        return
+            glutPostRedisplay()
+            return
     
     # Timer update
     update_timer()
@@ -2785,7 +2822,7 @@ def update():
     current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0
     time_remaining = get_time_remaining()
     
-    # FIXED: Check timer but don't end game if cheat mode is active
+    # Check timer but don't end game if cheat mode is active
     if not cheat_active and is_timer_expired():
         game_over = True
         stop_timer()
@@ -2812,7 +2849,7 @@ def update():
     updateWaveSystem(time_remaining)
     current_wave = getCurrentWave()
     
-    if int(current_time) % 5 == 0:  # Changed to int() to avoid float modulus
+    if int(current_time) % 5 == 0:  
         print(f"Timer: {time_remaining} seconds remaining, Wave: {current_wave}")
     
     # Mega Power Ups in Wave 3
@@ -2823,22 +2860,19 @@ def update():
     # Mega pickups check
     life, player_ammo = handleMegaPickups(player_x, player_y, life, player_ammo, time_remaining)
     
-    # Update player mega status - FIXED: removed megaPowerUps. prefix
+    # Update player mega status
     player_has_mega_weapon = mega_weapon_spawned and player_has_mega_weapon
     player_has_mega_shield = mega_shield_spawned and player_has_mega_shield
-    # mega_weapon_ammo is already a global variable
-    # mega_shield_health is already a global variable
     
     # Mega ammo regen
     if player_has_mega_weapon:
         regenerateMegaAmmo(current_time)
-        # mega_weapon_ammo is already updated by regenerateMegaAmmo()
     
     if not enemy_list:
         initEnemies()
     
     moveEnemies()
-    moveBoss()
+    updateBossPosition()
     moveBullets()
     
     # Check enemy bullets hitting planet
@@ -2847,7 +2881,7 @@ def update():
     
     old_health = planet_health
     
-    # Planet Health Checker - Only end game if not in cheat mode
+    # Planet Health Checker
     if planet_health <= 0 and not cheat_active:
         game_over = True
         planet_health = 0
@@ -2875,7 +2909,7 @@ def update():
     if planet_health != old_health:
         print(f"Planet health changed: {old_health} -> {planet_health}")
     
-    # Player hit with mega shield - BUT NOT IN CHEAT MODE
+    # Player hit with mega shield
     if not cheat_active:
         enemy_list, planet_attacker_list, life, game_over, bullets, damage_taken = playerHit(
             enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, 
@@ -2884,7 +2918,7 @@ def update():
     else:
         # In cheat mode, player doesn't take damage from enemy collisions
         damage_taken = 0
-        # Call the function but ignore the game_over resultwwwwwwwwww
+        # Call the function but ignore the game_over result
         temp_enemy_list, temp_planet_attacker_list, temp_life, temp_game_over, temp_bullets, temp_damage_taken = playerHit(
             enemy_list, planet_attacker_list, boss_x, boss_y, boss_active, player_x, player_y, 
             life, game_over, bullets, player_has_mega_shield, mega_shield_health
@@ -2909,11 +2943,11 @@ def update():
     cheat()
     planet_attacker_list = movePlanetAttackers(planet_attacker_list, 0, -1600)
     
-    # Boss in wave 3
+    # Boss in Wave 3
     if current_wave == 3 and not boss_active and not qte_triggered:
-        initBoss()
+        initBossInGame()
         print("BOSS TIME! Wave 3 Boss activated!")
-        
+            
     # Enemy and Boss Shooting updation
     # Enemy shooting
     current_time = glutGet(GLUT_ELAPSED_TIME) / 1000.0
@@ -2992,12 +3026,23 @@ def update():
     
     
     if cheat_active and is_timer_expired():
-        # Make player win automatically
         boss_active = False
         boss_health = 0
-        score += 1000  # Big bonus
+        game_win = True  
+        
+        # Add time bonus
+        time_bonus = get_time_remaining() * 10
+        score += 1000 + time_bonus  # Big bonus + time bonus
+        
+        # Stop all gameplay
+        stop_timer()
+        bullets = []  # Clear all bullets
+        enemy_bullets = []  # Clear enemy bullets
+        boss_bullets = []  # Clear boss bullets
+        
         print("CHEAT MODE: Auto-win!")
-        # Don't set game_over = True here - player wins, not loses
+        glutPostRedisplay()
+        return
     
     # Only end game if timer expired AND NOT in cheat mode
     if not cheat_active and is_timer_expired():
@@ -3010,14 +3055,13 @@ def update():
     glutPostRedisplay()
 
 def display():
-    # Check if game over and show black screen
-    if game_over:
-        # Black screen when game over
+    if game_over or game_win:
+        # Black screen when game over/won
         glClearColor(0, 0, 0, 1)  # Black background
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
         
-        # Show game over screen
-        drawGameOverScreen()
+        # Show game over/win screen
+        drawUI() 
         glutSwapBuffers()
         return
     
@@ -3052,7 +3096,7 @@ def display():
     drawEnemies()
     
     # Draw boss if Active only
-    if boss_active:
+    if boss_active and not game_win:
         drawBossEnemy(boss_x, boss_y, 120 + PLAYER_HEIGHT, boss_rot)
         drawBossHealthBar(boss_health, BOSS_HEALTH, "SKY CAPTAIN")
     
